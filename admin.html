@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VETIAS IQAC Admin Consolidation & Analytics Dashboard (AY 2026–2027)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #0f172a; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Admin Top Header -->
+  <header class="bg-slate-950 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center font-extrabold text-base shadow">IQ</div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight">VETIAS IQAC Admin Consolidation Portal</h1>
+            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">AY 2026–2027</span>
+          </div>
+          <p class="text-xs text-slate-400">Live Google Sheet Consolidation + Multi-Department .xlsx Merger</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="pullAllFromGoogleSheet()" id="livePullBtn" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Pull Live from Google Sheet
+        </button>
+
+        <label class="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition">
+          + Upload Dept .xlsx Files
+          <input type="file" multiple accept=".xlsx,.xls" onchange="handleMultiExcelUpload(event)" class="hidden" />
+        </label>
+
+        <button onclick="loadAdminDemo()" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold transition">
+          Load Demo (5 Depts)
+        </button>
+
+        <button onclick="exportMasterConsolidatedWorkbook()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow transition">
+          ↓ Export Master .xlsx
+        </button>
+
+        <a href="index.html" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold transition">
+          ← Dept Portal
+        </a>
+      </div>
+    </div>
+
+    <!-- Admin Sub-Navigation -->
+    <div class="bg-slate-900 border-t border-slate-800 px-4 sm:px-6">
+      <div class="max-w-[1600px] mx-auto flex items-center gap-1 overflow-x-auto">
+        <button onclick="switchAdminView('overview')" id="tab-overview" class="admin-nav px-4 py-2.5 text-xs font-bold border-b-2 border-blue-500 text-white">Overview & Analytics</button>
+        <button onclick="switchAdminView('matrix')" id="tab-matrix" class="admin-nav px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-white">Submission Matrix (17 Depts)</button>
+        <button onclick="switchAdminView('explorer')" id="tab-explorer" class="admin-nav px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-white">Consolidated Data Explorer</button>
+        <button onclick="switchAdminView('audit')" id="tab-audit" class="admin-nav px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-white">IQAC Audit & Exceptions</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 space-y-6">
+    <!-- Status Banner -->
+    <div id="adminBanner" class="bg-white rounded-xl border border-slate-200 p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+      <div class="flex items-center gap-2.5 text-xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+        <span id="adminStatusText" class="font-semibold text-slate-700">Ready. Click "Pull Live from Google Sheet" or upload department .xlsx files to consolidate.</span>
+      </div>
+      <div class="text-[11px] mono text-slate-500">Endpoint: AKfycbww96RnmXmiaem0rqngQG5rjvySVRdNXkGbVcLHJXV-</div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="text-[11px] font-bold uppercase text-slate-400">Depts Consolidated</div>
+        <div id="kpiDepts" class="text-2xl font-extrabold text-slate-900 mt-1">0 / 17</div>
+        <div class="text-[11px] text-slate-500 mt-1">Academic units + Library</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="text-[11px] font-bold uppercase text-slate-400">NIRF 1D.FRU Spend</div>
+        <div id="kpiNirf" class="text-2xl font-extrabold text-emerald-600 mt-1">₹0</div>
+        <div class="text-[11px] text-slate-500 mt-1">Seminars / Workshops</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="text-[11px] font-bold uppercase text-slate-400">Dept Activities</div>
+        <div id="kpiActivities" class="text-2xl font-extrabold text-blue-600 mt-1">0</div>
+        <div class="text-[11px] text-slate-500 mt-1">FDPs, Conferences & Events</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="text-[11px] font-bold uppercase text-slate-400">Faculty Publications</div>
+        <div id="kpiPubs" class="text-2xl font-extrabold text-indigo-600 mt-1">0</div>
+        <div class="text-[11px] text-slate-500 mt-1">CY Jan–Dec 2026</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs col-span-2 lg:col-span-1">
+        <div class="text-[11px] font-bold uppercase text-slate-400">Audit Exceptions</div>
+        <div id="kpiAudit" class="text-2xl font-extrabold text-rose-600 mt-1">0</div>
+        <div class="text-[11px] text-slate-500 mt-1">Missing links / placeholders</div>
+      </div>
+    </div>
+
+    <!-- View 1: Overview & Charts -->
+    <section id="view-overview" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <h3 class="text-sm font-bold text-slate-900 mb-3">Checklist Completion by Department (out of 36)</h3>
+          <div class="h-72"><canvas id="chartDeptProgress"></canvas></div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <h3 class="text-sm font-bold text-slate-900 mb-3">NIRF Parameter 1D.FRU Expenditure by Department (INR)</h3>
+          <div class="h-72"><canvas id="chartNirfSpend"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- View 2: Submission Matrix -->
+    <section id="view-matrix" class="hidden bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Department-Wise 36-Particular Submission Status Matrix</h3>
+          <p class="text-xs text-slate-500">Green = Completed • Amber = Ongoing • Slate = Not Submitted / N/A</p>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table id="matrixTable" class="w-full text-left border-collapse text-xs"></table>
+      </div>
+    </section>
+
+    <!-- View 3: Consolidated Data Explorer -->
+    <section id="view-explorer" class="hidden bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50">
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="explorerTabSelect" onchange="renderExplorerTable()" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold bg-white"></select>
+          <select id="explorerDeptFilter" onchange="renderExplorerTable()" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold bg-white">
+            <option value="ALL">All Departments</option>
+          </select>
+        </div>
+        <div id="explorerCountBadge" class="text-xs font-bold text-slate-600">0 records</div>
+      </div>
+      <div class="overflow-x-auto">
+        <table id="explorerTable" class="w-full text-left border-collapse text-xs"></table>
+      </div>
+    </section>
+
+    <!-- View 4: Audit & Exceptions -->
+    <section id="view-audit" class="hidden bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="p-4 border-b border-slate-200">
+        <h3 class="text-sm font-bold text-slate-900">IQAC Quality Audit & Missing Evidence Exceptions</h3>
+        <p class="text-xs text-slate-500">Flags records missing Google Drive links, unreplaced placeholder strings, or zero expenditure entries.</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table id="auditTable" class="w-full text-left border-collapse text-xs"></table>
+      </div>
+    </section>
+  </main>
+
+<script>
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbww96RnmXmiaem0rqngQG5rjvySVRdNXkGbVcLHJXV-/exec";
+const DEPARTMENTS = [
+  "Tamil", "English", "Mathematics", "Sociology", "CDF", "BBA", "MBA",
+  "Commerce", "Commerce CA", "Commerce PA", "Commerce A&F", "Commerce IT",
+  "Computer Science", "CS&A_BCA", "AI&DS_AI", "IT_CT", "Library"
+];
+
+let consolidatedData = {}; // dept -> { meta, summarySheet: [], tables: { tabName: [] } }
+let chart1 = null, chart2 = null;
+
+function initAdmin() {
+  const deptFilter = document.getElementById("explorerDeptFilter");
+  deptFilter.innerHTML = `<option value="ALL">All Departments</option>` + DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join("");
+  refreshDashboard();
+}
+
+function switchAdminView(view) {
+  ["overview", "matrix", "explorer", "audit"].forEach(v => {
+    document.getElementById("view-" + v).classList.toggle("hidden", v !== view);
+    const btn = document.getElementById("tab-" + v);
+    btn.classList.toggle("border-blue-500", v === view);
+    btn.classList.toggle("text-white", v === view);
+    btn.classList.toggle("border-transparent", v !== view);
+    btn.classList.toggle("text-slate-400", v !== view);
+  });
+}
+
+async function pullAllFromGoogleSheet() {
+  const statusEl = document.getElementById("adminStatusText");
+  statusEl.textContent = "Pulling live department submissions from Master Google Sheet...";
+  try {
+    const res = await fetch(GAS_API_URL + "?action=all");
+    const data = await res.json();
+    if (data.status === "ok" && Array.isArray(data.departments)) {
+      data.departments.forEach(item => {
+        if (item.department && item.payload) {
+          consolidatedData[item.department] = item.payload;
+        }
+      });
+      statusEl.textContent = `Live sync complete: Loaded ${data.departments.length} department(s) from Google Sheets at ${new Date().toLocaleTimeString()}.`;
+      refreshDashboard();
+    } else {
+      statusEl.textContent = "Google Sheet returned: " + JSON.stringify(data);
+    }
+  } catch (err) {
+    statusEl.textContent = "Live pull failed: " + err.message + " (Verify Apps Script Web App access is enabled).";
+  }
+}
+
+function handleMultiExcelUpload(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  let processed = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const wb = XLSX.read(e.target.result, { type: "array" });
+      const inferredDept = DEPARTMENTS.find(d => file.name.toUpperCase().includes(d.toUpperCase())) || file.name.split("_")[0];
+      const payload = { department: inferredDept, meta: {}, summarySheet: [], tables: {} };
+      if (wb.Sheets["Summary Sheet"]) {
+        const sRows = XLSX.utils.sheet_to_json(wb.Sheets["Summary Sheet"]);
+        payload.summarySheet = sRows.map(r => ({
+          sno: r["S NO"] || r.S_No || "",
+          domain: r.DOMAIN || r.Domain || "",
+          particulars: r.PARTICULARS || r.Particulars || "",
+          status: r.STATUS || r.Status || "Ongoing",
+          incharge: r["FACULTY INCHARGE"] || r.Faculty_Incharge || ""
+        }));
+      }
+      wb.SheetNames.forEach(sname => {
+        if (["Summary Sheet", "Department ", "REFERENCE", "Front"].includes(sname)) return;
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sname]);
+        if (rows.length > 0) {
+          payload.tables[sname] = rows.map(r => ({ Department: inferredDept, ...r }));
+        }
+      });
+      consolidatedData[inferredDept] = payload;
+      processed++;
+      if (processed === files.length) {
+        document.getElementById("adminStatusText").textContent = `Merged ${files.length} uploaded Excel workbook(s).`;
+        refreshDashboard();
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function loadAdminDemo() {
+  const samples = [
+    { dept: "Computer Science", nirf: 65000, acts: 8, pubs: 14, comp: 31 },
+    { dept: "Commerce", nirf: 48000, acts: 6, pubs: 9, comp: 28 },
+    { dept: "BBA", nirf: 35000, acts: 5, pubs: 7, comp: 25 },
+    { dept: "English", nirf: 22000, acts: 4, pubs: 6, comp: 24 },
+    { dept: "AI&DS_AI", nirf: 72000, acts: 7, pubs: 11, comp: 29 }
+  ];
+  samples.forEach(s => {
+    const summarySheet = Array.from({ length: 36 }, (_, i) => ({
+      sno: String(i + 1),
+      domain: i < 15 ? "DEPARTMENT" : (i < 27 ? "FACULTY" : "STUDENT"),
+      particulars: "Particular_" + (i + 1),
+      status: i < s.comp ? "Completed" : "Ongoing",
+      incharge: "Dr. Coordinator (" + s.dept + ")"
+    }));
+    consolidatedData[s.dept] = {
+      department: s.dept,
+      summarySheet,
+      tables: {
+        "NIRF Expenses (AY 2026-27)": [{ Department: s.dept, "Name of the Seminar/Conference/Workshop": s.dept + " National Conference 2026", Date: "2026-09-12", "No. of Participants": 160, "Expenditure incurred": s.nirf, "Type of Event": "National Conference/Seminar/Workshops" }],
+        "D_Activities": Array.from({ length: s.acts }, (_, k) => ({ Department: s.dept, "Title of Event": `${s.dept} Workshop #${k + 1}`, Date: "2026-08-10", "No. of Participants": 95, "Drive Link": "https://drive.google.com/drive/folders/demo" })),
+        "F_Publications": Array.from({ length: s.pubs }, (_, k) => ({ Department: s.dept, "Name of the Faculty": `Faculty ${k + 1}`, "Title of the Published Article": `Scopus Paper #${k + 1}`, Indexing: "Scopus", "Drive Link": k === 0 ? "" : "https://drive.google.com/drive/folders/pub" }))
+      }
+    };
+  });
+  document.getElementById("adminStatusText").textContent = "Loaded 5-department demo dataset.";
+  refreshDashboard();
+}
+
+function getAllRowsForTab(tabName) {
+  const all = [];
+  Object.keys(consolidatedData).forEach(dept => {
+    const rows = (consolidatedData[dept].tables && consolidatedData[dept].tables[tabName]) || [];
+    rows.forEach(r => all.push({ Department: dept, ...r }));
+  });
+  return all;
+}
+
+function refreshDashboard() {
+  const activeDepts = Object.keys(consolidatedData);
+  const nirfRows = getAllRowsForTab("NIRF Expenses (AY 2026-27)");
+  const actRows = getAllRowsForTab("D_Activities");
+  const pubRows = getAllRowsForTab("F_Publications");
+
+  const totalNirf = nirfRows.reduce((s, r) => s + (parseFloat(r["Expenditure incurred"]) || 0), 0);
+  document.getElementById("kpiDepts").textContent = `${activeDepts.length} / 17`;
+  document.getElementById("kpiNirf").textContent = "₹" + totalNirf.toLocaleString("en-IN");
+  document.getElementById("kpiActivities").textContent = actRows.length;
+  document.getElementById("kpiPubs").textContent = pubRows.length;
+
+  renderCharts(activeDepts);
+  renderMatrix(activeDepts);
+  populateExplorerTabs();
+  renderAuditReport();
+}
+
+function renderCharts(activeDepts) {
+  const labels = activeDepts.length ? activeDepts : ["No Data"];
+  const compCounts = activeDepts.length ? activeDepts.map(d => (consolidatedData[d].summarySheet || []).filter(x => x.status === "Completed").length) : [0];
+  const nirfCounts = activeDepts.length ? activeDepts.map(d => ((consolidatedData[d].tables || {})["NIRF Expenses (AY 2026-27)"] || []).reduce((s, r) => s + (parseFloat(r["Expenditure incurred"]) || 0), 0)) : [0];
+
+  if (chart1) chart1.destroy();
+  chart1 = new Chart(document.getElementById("chartDeptProgress"), {
+    type: "bar",
+    data: { labels, datasets: [{ label: "Completed Particulars (of 36)", data: compCounts, backgroundColor: "#2563eb", borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 36 } } }
+  });
+
+  if (chart2) chart2.destroy();
+  chart2 = new Chart(document.getElementById("chartNirfSpend"), {
+    type: "bar",
+    data: { labels, datasets: [{ label: "NIRF Expenditure (INR)", data: nirfCounts, backgroundColor: "#059669", borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+  });
+}
+
+function renderMatrix(activeDepts) {
+  const table = document.getElementById("matrixTable");
+  if (!activeDepts.length) {
+    table.innerHTML = `<tr><td class="p-6 text-center text-slate-500">No departments loaded yet.</td></tr>`;
+    return;
+  }
+  const sampleItems = consolidatedData[activeDepts[0]].summarySheet || [];
+  table.innerHTML = `
+    <thead>
+      <tr class="bg-slate-900 text-white text-[11px]">
+        <th class="p-2.5 sticky left-0 bg-slate-900">Particular</th>
+        ${activeDepts.map(d => `<th class="p-2.5 text-center">${d}</th>`).join("")}
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      ${sampleItems.map((it, idx) => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-2.5 font-semibold sticky left-0 bg-white">${it.sno}. ${it.particulars}</td>
+          ${activeDepts.map(d => {
+            const item = (consolidatedData[d].summarySheet || [])[idx];
+            const st = item ? item.status : "Pending";
+            const badge = st === "Completed" ? "bg-emerald-100 text-emerald-800" : (st === "Ongoing" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-500");
+            return `<td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${st}</span></td>`;
+          }).join("")}
+        </tr>
+      `).join("")}
+    </tbody>
+  `;
+}
+
+function populateExplorerTabs() {
+  const allTabs = new Set(["NIRF Expenses (AY 2026-27)", "D_Activities", "F_Publications", "S_Database"]);
+  Object.values(consolidatedData).forEach(d => Object.keys(d.tables || {}).forEach(t => allTabs.add(t)));
+  const sel = document.getElementById("explorerTabSelect");
+  const prev = sel.value;
+  sel.innerHTML = Array.from(allTabs).map(t => `<option value="${t}">${t}</option>`).join("");
+  if (prev && allTabs.has(prev)) sel.value = prev;
+  renderExplorerTable();
+}
+
+function renderExplorerTable() {
+  const tab = document.getElementById("explorerTabSelect").value;
+  const deptFilter = document.getElementById("explorerDeptFilter").value;
+  let rows = getAllRowsForTab(tab);
+  if (deptFilter !== "ALL") rows = rows.filter(r => r.Department === deptFilter);
+  document.getElementById("explorerCountBadge").textContent = `${rows.length} consolidated record(s)`;
+
+  const table = document.getElementById("explorerTable");
+  if (!rows.length) {
+    table.innerHTML = `<tr><td class="p-6 text-center text-slate-500">No consolidated rows found for ${tab}.</td></tr>`;
+    return;
+  }
+  const cols = Object.keys(rows[0]);
+  table.innerHTML = `
+    <thead>
+      <tr class="bg-slate-900 text-white text-[11px] uppercase">
+        ${cols.map(c => `<th class="p-2.5">${c}</th>`).join("")}
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      ${rows.map(r => `
+        <tr class="hover:bg-slate-50">
+          ${cols.map(c => {
+            const val = r[c] ?? "";
+            if (String(val).startsWith("http")) {
+              return `<td class="p-2.5"><a href="${val}" target="_blank" class="text-blue-600 underline font-semibold">Open Link ↗</a></td>`;
+            }
+            return `<td class="p-2.5">${val}</td>`;
+          }).join("")}
+        </tr>
+      `).join("")}
+    </tbody>
+  `;
+}
+
+function renderAuditReport() {
+  const exceptions = [];
+  Object.keys(consolidatedData).forEach(dept => {
+    const tables = consolidatedData[dept].tables || {};
+    Object.keys(tables).forEach(tab => {
+      if (tab === "F_Responsibility in VETIAS" || tab === "NIRF Expenses (AY 2026-27)") return;
+      (tables[tab] || []).forEach((row, idx) => {
+        const linkKey = Object.keys(row).find(k => k.toLowerCase().includes("link") || k.toLowerCase().includes("url"));
+        const linkVal = linkKey ? String(row[linkKey] || "").trim() : "";
+        if (!linkVal || linkVal.toLowerCase().includes("paste the path")) {
+          exceptions.push({ Department: dept, Tab: tab, Row: idx + 1, Issue: "Missing or unreplaced Google Drive proof URL" });
+        }
+      });
+    });
+  });
+
+  document.getElementById("kpiAudit").textContent = exceptions.length;
+  const table = document.getElementById("auditTable");
+  if (!exceptions.length) {
+    table.innerHTML = `<tr><td class="p-6 text-center text-emerald-700 font-semibold">Zero audit exceptions found across loaded departments.</td></tr>`;
+    return;
+  }
+  table.innerHTML = `
+    <thead>
+      <tr class="bg-rose-950 text-white text-[11px] uppercase">
+        <th class="p-2.5">Department</th>
+        <th class="p-2.5">Sheet / Tab</th>
+        <th class="p-2.5">Row #</th>
+        <th class="p-2.5">Audit Exception</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      ${exceptions.map(ex => `
+        <tr class="hover:bg-rose-50/40">
+          <td class="p-2.5 font-bold">${ex.Department}</td>
+          <td class="p-2.5 mono">${ex.Tab}</td>
+          <td class="p-2.5">${ex.Row}</td>
+          <td class="p-2.5 text-rose-700 font-medium">${ex.Issue}</td>
+        </tr>
+      `).join("")}
+    </tbody>
+  `;
+}
+
+function exportMasterConsolidatedWorkbook() {
+  const activeDepts = Object.keys(consolidatedData);
+  if (!activeDepts.length) {
+    alert("Load data from Google Sheets, Demo, or .xlsx files first.");
+    return;
+  }
+  const wb = XLSX.utils.book_new();
+
+  // 1. Master Submission Matrix
+  const matrixRows = [];
+  activeDepts.forEach(d => {
+    (consolidatedData[d].summarySheet || []).forEach(it => {
+      matrixRows.push({
+        Department: d,
+        Domain: it.domain,
+        "S No": it.sno,
+        Particulars: it.particulars,
+        Status: it.status,
+        "Faculty Incharge": it.incharge
+      });
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(matrixRows), "Master_Submission_Matrix");
+
+  // 2. All Consolidated Data Tabs
+  const allTabs = new Set();
+  activeDepts.forEach(d => Object.keys(consolidatedData[d].tables || {}).forEach(t => allTabs.add(t)));
+  allTabs.forEach(tab => {
+    const rows = getAllRowsForTab(tab).map((r, i) => ({ "Master S.No": i + 1, ...r }));
+    if (rows.length > 0) {
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), tab.substring(0, 31));
+    }
+  });
+
+  XLSX.writeFile(wb, "VETIAS_IQAC_Master_Consolidated_2026-2027.xlsx");
+}
+
+window.addEventListener("DOMContentLoaded", initAdmin);
+</script>
+</body>
+</html>

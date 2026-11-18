@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <title>VETIAS IQAC Data Collection Portal (AY 2026–2027)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #0f172a; padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    input, select, textarea { font-size: 16px !important; }
+    @media (min-width: 1024px) {
+      body { padding-bottom: 0; }
+      input, select, textarea { font-size: 0.875rem !important; }
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Sticky Header -->
+  <header class="sticky top-0 z-30 bg-slate-900 text-white border-b border-slate-800 shadow-md">
+    <div class="max-w-[1600px] mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <button onclick="toggleMobileDrawer(true)" class="lg:hidden p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 min-w-[42px] min-h-[42px] flex items-center justify-center" aria-label="Open menu">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-extrabold text-sm shrink-0 shadow">V</div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="text-sm sm:text-base font-bold tracking-tight truncate">VETIAS IQAC Data Portal</h1>
+            <span class="hidden sm:inline-flex px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Live Sync Connected</span>
+          </div>
+          <p class="text-[11px] text-slate-400 truncate">AY June 2026 – May 2027 • 36 Particulars / 38 Tabs</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <select id="deptSelect" onchange="switchDepartment(this.value)" class="bg-slate-800 text-white border border-slate-700 rounded-lg px-2.5 py-2 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[155px] sm:max-w-[220px]">
+        </select>
+
+        <button onclick="openSyncModal()" class="hidden sm:inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          Cloud Sync
+        </button>
+
+        <button onclick="exportDeptExcel()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow transition min-h-[40px]">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span class="hidden md:inline">Export</span> .xlsx
+        </button>
+
+        <a href="admin.html" class="hidden xl:inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold transition">
+          Admin View →
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile Quick-Jump Domain Strip -->
+    <div class="lg:hidden bg-slate-800/90 border-t border-slate-700/80 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <button onclick="selectTab('Summary Sheet')" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-600 text-white shrink-0">Summary (36)</button>
+      <button onclick="selectTab('NIRF Expenses (AY 2026-27)')" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-700 text-slate-200 shrink-0">NIRF 1D.FRU</button>
+      <button onclick="selectTab('D_Directory')" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-700 text-slate-200 shrink-0">D_Directory</button>
+      <button onclick="selectTab('D_Activities')" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-700 text-slate-200 shrink-0">D_Activities</button>
+      <button onclick="selectTab('F_Publications')" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-700 text-slate-200 shrink-0">F_Publications</button>
+      <button onclick="selectTab('S_Database')" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-700 text-slate-200 shrink-0">S_Database</button>
+      <button onclick="toggleMobileDrawer(true)" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-600/80 text-white shrink-0">All 38 Tabs →</button>
+    </div>
+  </header>
+
+  <!-- Mobile Slide-Over Drawer -->
+  <div id="mobileDrawerBackdrop" onclick="toggleMobileDrawer(false)" class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs hidden lg:hidden"></div>
+  <aside id="mobileDrawer" class="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-white shadow-2xl transform -translate-x-full transition-transform duration-200 ease-out flex flex-col lg:hidden">
+    <div class="p-4 bg-slate-900 text-white flex items-center justify-between">
+      <div>
+        <div class="font-bold text-sm">All 38 IQAC Tabs</div>
+        <div id="drawerDeptLabel" class="text-xs text-blue-300">Department</div>
+      </div>
+      <button onclick="toggleMobileDrawer(false)" class="p-2 rounded-lg bg-slate-800 text-slate-300">✕</button>
+    </div>
+    <div class="p-3 border-b border-slate-200 flex gap-2">
+      <button onclick="loadSampleData(); toggleMobileDrawer(false);" class="flex-1 py-2 px-2.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-200">Load Sample</button>
+      <label class="flex-1 py-2 px-2.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold text-center cursor-pointer border border-slate-200">
+        Import .xlsx
+        <input type="file" accept=".xlsx,.xls" onchange="importDeptExcel(event); toggleMobileDrawer(false);" class="hidden" />
+      </label>
+    </div>
+    <div id="mobileNavContainer" class="flex-1 overflow-y-auto p-3 space-y-4"></div>
+    <div class="p-3 border-t border-slate-200 bg-slate-50">
+      <a href="admin.html" class="block w-full text-center py-2.5 rounded-lg bg-slate-900 text-white text-xs font-semibold">Open IQAC Admin Dashboard →</a>
+    </div>
+  </aside>
+
+  <!-- Main Workspace Layout -->
+  <div class="flex-1 max-w-[1600px] w-full mx-auto flex">
+    <!-- Desktop Left Sidebar -->
+    <aside class="hidden lg:flex w-72 shrink-0 bg-white border-r border-slate-200 flex-col h-[calc(100vh-58px)] sticky top-[58px]">
+      <div class="p-3.5 border-b border-slate-200 space-y-2.5">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-semibold text-slate-600">36-Point Checklist</span>
+          <span id="sidebarProgressText" class="font-bold text-blue-600">0 / 36</span>
+        </div>
+        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div id="sidebarProgressBar" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-1.5 pt-1">
+          <button onclick="loadSampleData()" class="py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[11px] font-semibold border border-indigo-200 transition">Load Sample</button>
+          <label class="py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-semibold text-center cursor-pointer border border-slate-200 transition">
+            Import .xlsx
+            <input type="file" accept=".xlsx,.xls" onchange="importDeptExcel(event)" class="hidden" />
+          </label>
+        </div>
+      </div>
+      <div id="desktopNavContainer" class="flex-1 overflow-y-auto p-3 space-y-4"></div>
+    </aside>
+
+    <!-- Main Form Area -->
+    <main class="flex-1 min-w-0 p-3 sm:p-6 space-y-4">
+      <!-- Sign-off & Cloud Status Strip -->
+      <div class="bg-white rounded-xl border border-slate-200 p-3.5 sm:p-4 shadow-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span class="text-xs font-bold text-slate-800 uppercase tracking-wide">Department Sign-Off & Auto-Save</span>
+            <span id="saveIndicator" class="text-[11px] text-slate-400 font-medium">Saved locally</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="pullFromCloud()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">↓ Pull Cloud Draft</button>
+            <button onclick="pushToCloud()" id="quickPushBtn" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition">↑ Submit to IQAC Sheet</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Wing / Category (Optional)</label>
+            <select id="metaWing" onchange="updateMeta('wing', this.value)" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 bg-white">
+              <option value="">Academic Department</option>
+              <option value="Club">Club</option>
+              <option value="Committee">Committee</option>
+              <option value="Cell">Cell</option>
+              <option value="Sports">Sports</option>
+              <option value="NCC">NCC</option>
+              <option value="NSS">NSS</option>
+              <option value="YRC/RRC">YRC/RRC</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Dept. IQAC Coordinator</label>
+            <input type="text" id="metaCoordinator" oninput="updateMeta('coordinator', this.value)" placeholder="Dr. / Prof. Name" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Head of Department (HoD)</label>
+            <input type="text" id="metaHod" oninput="updateMeta('hod', this.value)" placeholder="HoD Name" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">PL / Dean - SoB</label>
+            <input type="text" id="metaDean" oninput="updateMeta('dean', this.value)" placeholder="PL / Dean Name" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Tab Content Container -->
+      <div id="workspaceContainer" class="space-y-4"></div>
+    </main>
+  </div>
+
+  <!-- Sticky Bottom Mobile Action Bar -->
+  <div class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 px-3 py-2 flex items-center justify-between gap-2 shadow-lg" style="padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));">
+    <button onclick="openSyncModal()" class="flex-1 py-2.5 px-2 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs">
+      ↑ Sync Sheet
+    </button>
+    <button id="mobileAddRowBtn" onclick="addRowForActiveTab()" class="flex-1 py-2.5 px-2 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-1">
+      + Add Entry
+    </button>
+    <button onclick="toggleMobileDrawer(true)" class="py-2.5 px-3 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold border border-slate-300">
+      Tabs (38)
+    </button>
+  </div>
+
+  <!-- Cloud Sync Modal -->
+  <div id="syncModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Google Sheets Live-Sync Connector</h3>
+          <p class="text-xs text-slate-500">Pre-linked to Deployment ID: <span class="mono font-semibold text-slate-700">AKfycbww96RnmXmiaem0rqngQG5rjvySVRdNXkGbVcLHJXV-</span></p>
+        </div>
+        <button onclick="closeSyncModal()" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500">✕</button>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Apps Script Production Web App URL (<span class="mono">/exec</span>)</label>
+        <input type="url" id="gasUrlInput" class="w-full rounded-lg border border-slate-300 px-3 py-2 mono text-xs" />
+        <p class="text-[11px] text-slate-500 mt-1">Automatically converts <span class="mono">/dev</span> test links to <span class="mono">/exec</span> production endpoints.</p>
+      </div>
+
+      <div id="syncStatusBox" class="hidden rounded-xl p-3 text-xs font-medium"></div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+        <button onclick="pushToCloud()" class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow transition">
+          ↑ Push Dept Data to Master Sheet
+        </button>
+        <button onclick="pullFromCloud()" class="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition">
+          ↓ Pull Dept Draft from Cloud
+        </button>
+      </div>
+      <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+        <button onclick="saveGasUrl()" class="text-xs font-semibold text-blue-600 hover:underline">Save Custom URL</button>
+        <button onclick="closeSyncModal()" class="px-4 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const DEFAULT_GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbww96RnmXmiaem0rqngQG5rjvySVRdNXkGbVcLHJXV-/exec";
+
+const DEPARTMENTS = [
+  "Tamil", "English", "Mathematics", "Sociology", "CDF", "BBA", "MBA",
+  "Commerce", "Commerce CA", "Commerce PA", "Commerce A&F", "Commerce IT",
+  "Computer Science", "CS&A_BCA", "AI&DS_AI", "IT_CT", "Library"
+];
+
+const CLASSES = [
+  "I B.A English","II B.A English","III B.A English","I B.A Sociology","II B.A Sociology","III B.A Sociology",
+  "I B.Com","II B.Com A","II B.Com B","III B.Com A","III B.Com B",
+  "I B.Com CA A","I B.Com CA B","II B.Com CA A","II B.Com CA B","III B.Com CA A","III B.Com CA B",
+  "I BBA","II BBA","III BBA","I B.Sc CS","II B.Sc CS","III B.Sc CS",
+  "I B.Sc CSA","II B.Sc CSA","III B.Sc CSA","I B.Sc IT","II B.Sc IT","III B.Sc IT",
+  "I B.Sc AIDS - A","I B.Sc AIDS - B","II B.Sc AIDS","III B.Sc AIDS",
+  "I B.Sc CDF","II B.Sc CDF","III B.Sc CDF","I M.Com","II M.Com","I MBA","II MBA",
+  "I M.Sc CDF","II M.Sc CDF","I M.SC CS","II M.SC CS",
+  "I B.COM A&F","II B.COM A&F","III B.COM A&F","I B.COM PA","II B.COM PA","III B.COM PA",
+  "I BSC CT","I BSC AI"
+];
+
+const DESIGNATIONS = [
+  "PL School of Computing", "PL School of Commerce", "Dean SoB",
+  "Associate Professor & Head", "Assistant Professor & Head",
+  "Associate Professor", "Assistant Professor"
+];
+
+const SUMMARY_ITEMS = [
+  { sno: "-", domain: "NIRF", tab: "NIRF Expenses (AY 2026-27)", particulars: "NIRF Expenses (AY 2026-27)", naming: "Enter expense rows directly in NIRF tab" },
+  { sno: "1", domain: "DEPARTMENT", tab: "D_Directory", particulars: "D_Directory (Vision & Mission, SWOC, Calendar, Academic Plan, Association)", naming: "DEPT_2026-27_Vision&Mission / Academic Calendar / ODD_Academic Plan" },
+  { sno: "2", domain: "DEPARTMENT", tab: "D_MoM_CCM", particulars: "D_MoM & D_CCM (Minutes of Meeting & Class Committee Meeting)", naming: "DEPT_2026-27_ODD_MoM_01 / DEPT_2026-27_ODD_CCM_01" },
+  { sno: "3", domain: "DEPARTMENT", tab: "D_MMM_PTM", particulars: "D_MMM & PTM (Mentor Mentee & Parent Teachers Meeting)", naming: "DEPT_2026-27_ODD_MMM_01 / DEPT_2026-27_ODD_PTM_001" },
+  { sno: "4", domain: "DEPARTMENT", tab: "D_Mou_NewsLetter", particulars: "D_Mou, D_News_Letter & Annual Report", naming: "DEPT_2026-27_Annual Report_01 / DEPT_2026-27_ODD_MoU_001" },
+  { sno: "5", domain: "DEPARTMENT", tab: "D_Activities", particulars: "D_Activities (Conference / Seminar / Workshop / FDP / Hackathon)", naming: "DEPT_2026-27_PRG_001" },
+  { sno: "6", domain: "DEPARTMENT", tab: "D_EDP  MDP", particulars: "D_EDP & MDP Programmes Organised", naming: "DEPT_2026-27_EDP_001" },
+  { sno: "7", domain: "DEPARTMENT", tab: "D_Outreach Events", particulars: "D_Outreach Events (Social / Extension Activity)", naming: "DEPT_2026-27_OUTREACH_001" },
+  { sno: "8", domain: "DEPARTMENT", tab: "D_VAC", particulars: "D_VAC (Certificate / Value Added Courses)", naming: "DEPT_2026-27_ODD_VAC_001" },
+  { sno: "9", domain: "DEPARTMENT", tab: "D_Research_Guide", particulars: "D_Research Guide Recognition", naming: "DEPT_GUIDESHIP_Faculty Name" },
+  { sno: "10", domain: "DEPARTMENT", tab: "D_Research_Scholar", particulars: "D_Research Scholar Progress (DC / Synopsis / Thesis / Viva)", naming: "DEPT_PHD_2026-2027_REGISTRATION_Scholar Name" },
+  { sno: "11", domain: "DEPARTMENT", tab: "D_BU-Result Analysis", particulars: "D_BU-Result Analysis (ODD & EVEN + Revaluation)", naming: "DEPT_2026-27_ODD_Class_RA" },
+  { sno: "12", domain: "DEPARTMENT", tab: "D_CIA Results & Remedial Measur", particulars: "D_CIA Results & Remedial Measures (Single PDF per Class)", naming: "DEPT_2026-27_ODD_1UG_RC_01" },
+  { sno: "13", domain: "DEPARTMENT", tab: "D_Attendance&Exams", particulars: "D_Attendance & Exams (Monthly Proforma, Consolidated Marks, Univ MS)", naming: "DEPT_2026-27_ODD_1UG_JuneMAP / Consolidate / Exam_MS" },
+  { sno: "14", domain: "DEPARTMENT", tab: "D_Graduate UG", particulars: "D_Graduate UG (2024–2027 Pass Out Progression & Placement)", naming: "DEPT_2024-2027_UG_Placement_001 / Higher Studies_001" },
+  { sno: "15", domain: "DEPARTMENT", tab: "D_Graduate PG", particulars: "D_Graduate PG (2025–2027 Pass Out Progression & Placement)", naming: "DEPT_2025-2027_PG_Placement_001 / Higher Studies_001" },
+  { sno: "16", domain: "FACULTY", tab: "F_Responsibility in VETIAS", particulars: "F_Responsibility in VETIAS (Club, Cell, IQAC, Tutor, etc.)", naming: "NIL (Direct entry only)" },
+  { sno: "17", domain: "FACULTY", tab: "F_Academic Roles", particulars: "F_Academic Roles (BoS, Syndicate, Examiner, Chief Guest)", naming: "DEPT_2026-2027_Faculty Name_Roles" },
+  { sno: "18", domain: "FACULTY", tab: "F_Awards", particulars: "F_Awards & Recognition (Academic / Sports)", naming: "DEPT_2026-2027_Awards_01_Faculty Name" },
+  { sno: "19", domain: "FACULTY", tab: "F_Resource person", particulars: "F_Resource Person (Invited Talks Delivered)", naming: "DEPT_2026-2027_Resource Person_01_Faculty Name" },
+  { sno: "20", domain: "FACULTY", tab: "F_Participation", particulars: "F_Participation (FDP / Conference / Workshop / Seminar)", naming: "DEPT_2026-2027_Participation_01_Faculty Name" },
+  { sno: "21", domain: "FACULTY", tab: "F_Presentation", particulars: "F_Presentation (Research Paper Presented)", naming: "DEPT_2026-2027_Presentation_01_Faculty Name" },
+  { sno: "22", domain: "FACULTY", tab: "F_Publications", particulars: "F_Publications (CY Jan 2026 – Dec 2026)", naming: "DEPT_2026-2027_Publication_01_Faculty Name" },
+  { sno: "23", domain: "FACULTY", tab: "F_PatentCopyright", particulars: "F_Patent / Copyright (CY Jan 2026 – Dec 2026)", naming: "DEPT_2026-2027_Patent_01_Faculty Name" },
+  { sno: "24", domain: "FACULTY", tab: "F_Sponsored Research", particulars: "F_Sponsored Research (Granted Projects)", naming: "DEPT_2026-2027_Sponsored Research_01_Faculty Name" },
+  { sno: "25", domain: "FACULTY", tab: "F_Consultancy", particulars: "F_Consultancy Projects", naming: "DEPT_2026-2027_Consultancy_01_Faculty Name" },
+  { sno: "26", domain: "FACULTY", tab: "F_Online Course", particulars: "F_Online Course Completion (NPTEL / Coursera / IBM)", naming: "DEPT_2026-2027_Online Course_01_Faculty Name" },
+  { sno: "27", domain: "FACULTY", tab: "F_Video Lecture", particulars: "F_Video Lecture (YouTube E-Content Links)", naming: "DEPT_2026-2027_Video Lecture_01_Faculty Name" },
+  { sno: "28", domain: "STUDENT", tab: "S_Database", particulars: "S_Database (Sanctioned, Admitted, Current Strength, Community)", naming: "DEPT_2026-2027_ODD_GALLEY_CLASS NAME" },
+  { sno: "29", domain: "STUDENT", tab: "S_Scholarship.", particulars: "S_Scholarship (Management / Govt / Private / Sports)", naming: "DEPT_2026-2027_ODD_Scholarship_REG.NO." },
+  { sno: "30", domain: "STUDENT", tab: "S_Awards", particulars: "S_Awards (Academic / Sports / Culturals)", naming: "DEPT_2026-2027_ODD_AWARD_REG.NO." },
+  { sno: "31", domain: "STUDENT", tab: "S_PartcipationPresentation", particulars: "S_Participation / Presentation", naming: "DEPT_2026-2027_ODD_Participation_REG.NO." },
+  { sno: "32", domain: "STUDENT", tab: "S_Publication", particulars: "S_Publication (Books / Articles / News)", naming: "DEPT_2026-2027_Publication_01_REG.NO." },
+  { sno: "33", domain: "STUDENT", tab: "S_MOOC ", particulars: "S_MOOC (Online Course / NPTEL Completion)", naming: "DEPT_2026-2027_ODD_MOOC_REGISTER NO." },
+  { sno: "34", domain: "STUDENT", tab: "S_Project", particulars: "S_Project (Student Project Reports)", naming: "DEPT_2026-2027_EVEN_Project_CLASS" },
+  { sno: "35", domain: "STUDENT", tab: "S_IV  Field Visit", particulars: "S_IV / Field Visit", naming: "DEPT_2026-2027_ODD_IV_01" },
+  { sno: "36", domain: "STUDENT", tab: "S_Training Programs Intenship", particulars: "S_Training Programs / Internship", naming: "DEPT_2026-2027_ODD_TRI.PRG_01" }
+];
+
+const TAB_SCHEMAS = {
+  "NIRF Expenses (AY 2026-27)": {
+    domain: "NIRF", title: "NIRF Parameter 1D.FRU — Operational Expenditure (Seminars / Conferences / Workshops)",
+    subtitle: "India Rankings 2027 • Events conducted during 01.06.2026 to 31.05.2027",
+    cols: [
+      { key: "Name of the Seminar/Conference/Workshop", label: "Event Name", type: "text", required: true },
+      { key: "Date", label: "Date", type: "date" },
+      { key: "No. of Participants", label: "Participants", type: "number" },
+      { key: "Expenditure incurred", label: "Expenditure (Rs.)", type: "number", sum: true },
+      { key: "Type of Event", label: "NIRF Event Category", type: "select", options: [
+        "National Conference/Seminar/Workshops","International Conference/Seminar/Workshops","State Level Conference/Seminar/Workshops",
+        "Training Program for Students of your institution","Training Program for Faculty of your institution",
+        "Workshops for Students of your institution","Workshops for Faculty of your institution",
+        "Seminar for Students of your institution","Seminar for Faculty of your institution"
+      ]}
+    ]
+  },
+  "D_Directory": {
+    domain: "DEPARTMENT", title: "D_Directory — Governance, Academic Calendar, Academic Plan & Association",
+    subtitle: "Naming: DEPT_2026-27_Vision&Mission | DEPT_2026-27_Academic Calendar | DEPT_2026-27_ODD_Academic Plan",
+    cols: [
+      { key: "Document Type", label: "Directory Item", type: "select", options: ["Vision & Mission + SWOC","Academic Calendar (Planner)","Academic Plan - ODD (Workload/Allotment/TT)","Academic Plan - EVEN (Workload/Allotment/TT)","Association Approval & Office Bearers"] },
+      { key: "Semester", label: "Semester", type: "select", options: ["Annual","ODD","EVEN"] },
+      { key: "Association / Details", label: "Association Name / Office Bearers / Notes", type: "text" },
+      { key: "Drive Link", label: "Authenticated Drive Link", type: "url", namingHint: "DEPT_2026-27_Vision&Mission" }
+    ]
+  },
+  "D_MoM_CCM": {
+    domain: "DEPARTMENT", title: "D_MoM_CCM — Minutes of Meeting & Class Committee Meetings",
+    subtitle: "Naming: DEPT_2026-27_ODD_MoM_01 | DEPT_2026-27_ODD_CCM_01",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Meeting Type", label: "Meeting Type", type: "select", options: ["Department MoM","CCM - 1","CCM - 2"] },
+      { key: "Class", label: "Class (for CCM)", type: "select", options: ["All Faculty (MoM)","I UG","II UG","III UG","I PG","II PG"] },
+      { key: "Date", label: "Meeting Date", type: "date" },
+      { key: "Drive Link", label: "Authenticated Scanned Link", type: "url", namingHint: "DEPT_2026-27_ODD_MoM_01" }
+    ]
+  },
+  "D_MMM_PTM": {
+    domain: "DEPARTMENT", title: "D_MMM_PTM — Mentor Mentee & Parent Teachers Meetings",
+    subtitle: "Naming: DEPT_2026-27_ODD_MMM_01 | DEPT_2026-27_ODD_PTM_001",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Meeting Type", label: "Meeting Category", type: "select", options: ["Mentor Mentee - I (ERP)","Mentor Mentee - II (ERP)","PTM - Individual Parent Visit","PTM - Group Parent Visit"] },
+      { key: "Class", label: "Class", type: "select", options: ["I UG","II UG","III UG","I PG","II PG"] },
+      { key: "Drive Link", label: "ERP / Scanned Copy Link", type: "url", namingHint: "DEPT_2026-27_ODD_MMM_01" }
+    ]
+  },
+  "D_Mou_NewsLetter": {
+    domain: "DEPARTMENT", title: "D_Mou_NewsLetter — Functional MoUs, Newsletters & Annual Report",
+    subtitle: "Naming: DEPT_2026-27_ODD_MoU_001 | DEPT_2026-27_Annual Report_01",
+    cols: [
+      { key: "Record Type", label: "Type", type: "select", options: ["MoU","Newsletter (ODD/EVEN)","Annual Report"] },
+      { key: "Date", label: "Date Signed / Published", type: "date" },
+      { key: "New / Renewal", label: "New / Renewal", type: "select", options: ["New","Renewal","N/A"] },
+      { key: "Duration", label: "Duration", type: "text" },
+      { key: "Organization Name & Address", label: "Organization / Issue Title", type: "text" },
+      { key: "Purpose of MoU", label: "Purpose / Summary", type: "text" },
+      { key: "No. of Functional Activities", label: "Activities Count", type: "number" },
+      { key: "Drive Link", label: "Drive Link", type: "url", namingHint: "DEPT_2026-27_ODD_MoU_001" }
+    ]
+  },
+  "D_Activities": {
+    domain: "DEPARTMENT", title: "D_Activities — Academic Programmes Organised by Department",
+    subtitle: "Naming: DEPT_2026-27_PRG_001 (Authenticated Scanned Report)",
+    cols: [
+      { key: "Approval Number", label: "Approval No.", type: "text" },
+      { key: "Faculty Coordinator", label: "Coordinator", type: "text" },
+      { key: "Date", label: "Date", type: "date" },
+      { key: "Duration (No. of Days)", label: "Days", type: "number" },
+      { key: "Nature of the Event", label: "Nature", type: "select", options: ["Conference","Seminar","Webinar","MDP","EDP","Symposium","Guest Lecture","FDP","Workshop","Hackathon","Others"] },
+      { key: "Title of Event", label: "Title of Event", type: "text" },
+      { key: "Level", label: "Level", type: "select", options: ["Institutional Level","State Level","National Level","International Level"] },
+      { key: "Associated with Other Department / Organisation", label: "Collaborator", type: "text" },
+      { key: "Resource Persons", label: "Resource Person Details", type: "text" },
+      { key: "Venue", label: "Venue", type: "select", options: ["Kamarajar Arangam","Srinivasa Ramanujan Arangam","A.P.J. Abdulkalam Arangam","Others"] },
+      { key: "No. of Participants", label: "Participants", type: "number" },
+      { key: "Social media / Website Link", label: "Social / Web URL", type: "url" },
+      { key: "Drive Link", label: "Report Drive Link", type: "url", namingHint: "DEPT_2026-27_PRG_001" }
+    ]
+  },
+  "D_EDP  MDP": {
+    domain: "DEPARTMENT", title: "D_EDP & MDP — Entrepreneurship / Management Development Programmes",
+    subtitle: "AY June 2026 – May 2027",
+    cols: [
+      { key: "Faculty Coordinator", label: "Coordinator", type: "text" },
+      { key: "Date", label: "Date", type: "date" },
+      { key: "Duration (No. of Days)", label: "Days", type: "number" },
+      { key: "Nature of Event", label: "Type", type: "select", options: ["EDP","MDP"] },
+      { key: "Title of Event", label: "Title", type: "text" },
+      { key: "Associated with Other Department / Organisation", label: "Collaborator", type: "text" },
+      { key: "Resource Persons", label: "Resource Person", type: "text" },
+      { key: "Venue", label: "Venue", type: "select", options: ["Kamarajar Arangam","Srinivasa Ramanujan Arangam","A.P.J. Abdulkalam Arangam","Others"] },
+      { key: "No. of Participants", label: "Participants", type: "number" },
+      { key: "Drive Link", label: "Report Drive Link", type: "url", namingHint: "DEPT_2026-27_EDP_001" }
+    ]
+  },
+  "D_Outreach Events": {
+    domain: "DEPARTMENT", title: "D_Outreach Events — Social & Extension Activities",
+    subtitle: "Total Beneficiaries auto-calculates from Faculty + Student + External Participants",
+    cols: [
+      { key: "Faculty Coordinator", label: "Coordinator", type: "text" },
+      { key: "Date", label: "Date", type: "date" },
+      { key: "Duration (No. of Days)", label: "Days", type: "number" },
+      { key: "Nature of the Event", label: "Nature", type: "select", options: ["Educational","Community Service","Skill Development","Awareness","Social Responsibility","Career Guidance"] },
+      { key: "Name of the Activity", label: "Activity Name", type: "text" },
+      { key: "Organization Name & Address", label: "Community / Org Place", type: "text" },
+      { key: "Faculty Participants", label: "VETIAS Faculty", type: "number" },
+      { key: "Student Participants", label: "VETIAS Students", type: "number" },
+      { key: "Other Participants", label: "External Beneficiaries", type: "number" },
+      { key: "Award Received", label: "Award (if any)", type: "text" },
+      { key: "Drive Link", label: "Report Drive Link", type: "url", namingHint: "DEPT_2026-27_OUTREACH_001" }
+    ]
+  },
+  "D_VAC": {
+    domain: "DEPARTMENT", title: "D_VAC — Value Added / Certificate Courses Offered",
+    subtitle: "Naming: DEPT_2026-27_ODD_VAC_001",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "Actual Strength", label: "Strength", type: "number" },
+      { key: "VAC with MoU", label: "MoU Partner (if any)", type: "text" },
+      { key: "Course Code", label: "Course Code", type: "text" },
+      { key: "Course Name", label: "Course Name", type: "text" },
+      { key: "Starting Date", label: "Start Date", type: "date" },
+      { key: "Ending Date", label: "End Date", type: "date" },
+      { key: "Duration Days", label: "Days", type: "number" },
+      { key: "Duration Hours", label: "Hours", type: "number" },
+      { key: "No. of Students Certified", label: "Certified Count", type: "number" },
+      { key: "Inhouse / External", label: "Mode", type: "select", options: ["Inhouse","External"] },
+      { key: "Drive Link", label: "VAC Drive Link", type: "url", namingHint: "DEPT_2026-27_ODD_VAC_001" }
+    ]
+  },
+  "D_Research_Guide": {
+    domain: "DEPARTMENT", title: "D_Research_Guide — Recognized Ph.D. Supervisors",
+    subtitle: "Naming: DEPT_GUIDESHIP_Faculty Name",
+    cols: [
+      { key: "Name of the Supervisor", label: "Supervisor Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: ["Associate Professor","Assistant Professor","Associate Professor & Head","Assistant Professor & Head"] },
+      { key: "Guide Approval Number & Date", label: "Approval No. & Date", type: "text" },
+      { key: "Guiding Full Time", label: "Guiding (FT)", type: "number" },
+      { key: "Guiding Part Time", label: "Guiding (PT)", type: "number" },
+      { key: "Completed Full Time", label: "Completed (FT)", type: "number" },
+      { key: "Completed Part Time", label: "Completed (PT)", type: "number" },
+      { key: "Drive Link", label: "Approval Letter Link", type: "url", namingHint: "DEPT_GUIDESHIP_Faculty Name" }
+    ]
+  },
+  "D_Research_Scholar": {
+    domain: "DEPARTMENT", title: "D_Research_Scholar — Ph.D. Scholar Progress & Milestones",
+    subtitle: "Naming: DEPT_PHD_2026-2027_REGISTRATION_Scholar Name",
+    cols: [
+      { key: "Registration Communication Number", label: "Reg. Comm. No.", type: "text" },
+      { key: "Date of Registration", label: "Reg. Date", type: "date" },
+      { key: "Name of the Research Scholar", label: "Scholar Name", type: "text" },
+      { key: "Mode", label: "Mode", type: "select", options: ["FT","PT"] },
+      { key: "Fellowship Scholar", label: "Fellowship", type: "select", options: ["None","UGC JRF","ICSSR","ICHR","ICMR","Tamil Nadu Ph.D Scholarship","SC/ST Fellowship","OBC National Fellowship"] },
+      { key: "Name of the Supervisor", label: "Supervisor", type: "text" },
+      { key: "DC Meeting 1 Date", label: "DC-1 Date", type: "date" },
+      { key: "DC Meeting 2 Date", label: "DC-2 Date", type: "date" },
+      { key: "Synopsis Submission Date", label: "Synopsis Date", type: "date" },
+      { key: "Thesis Submission Date", label: "Thesis Date", type: "date" },
+      { key: "Viva-voce Date", label: "Viva Date", type: "date" },
+      { key: "Drive Link", label: "Registration / Provisional Link", type: "url", namingHint: "DEPT_PHD_2026-2027_REGISTRATION_Scholar Name" }
+    ]
+  },
+  "D_BU-Result Analysis": {
+    domain: "DEPARTMENT", title: "D_BU-Result Analysis — Bharathiar University Exam Pass % & Revaluation",
+    subtitle: "Naming: DEPT_2026-27_ODD_Class_RA",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "Strength", label: "Appeared Strength", type: "number" },
+      { key: "Overall Pass %", label: "Initial Pass %", type: "number" },
+      { key: "Centum Scorers", label: "Centum Count", type: "number" },
+      { key: "Revaluation Applied", label: "Reval Applied", type: "number" },
+      { key: "Passed after Revaluation", label: "Passed Post-Reval", type: "number" },
+      { key: "Final Class Pass %", label: "Updated Pass %", type: "number" },
+      { key: "University Rank Details", label: "Rank Holder (if any)", type: "text" },
+      { key: "Drive Link", label: "Result Analysis Link", type: "url", namingHint: "DEPT_2026-27_ODD_Class_RA" }
+    ]
+  },
+  "D_CIA Results & Remedial Measur": {
+    domain: "DEPARTMENT", title: "D_CIA Results & Remedial Measures (CIA 1, CIA 2 & Model)",
+    subtitle: "Upload single merged PDF per class (Time Table + ERP ISO Format V + IQAC Remedial Template)",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "CIA 1 PDF Link", label: "CIA 1 Merged PDF", type: "url", namingHint: "DEPT_2026-27_ODD_1UG_RC_01" },
+      { key: "Remedial 1 Link", label: "Remedial 1 Link", type: "url" },
+      { key: "CIA 2 PDF Link", label: "CIA 2 Merged PDF", type: "url" },
+      { key: "Remedial 2 Link", label: "Remedial 2 Link", type: "url" },
+      { key: "Model PDF Link", label: "Model Merged PDF", type: "url" },
+      { key: "Remedial 3 Link", label: "Remedial 3 Link", type: "url" }
+    ]
+  },
+  "D_Attendance&Exams": {
+    domain: "DEPARTMENT", title: "D_Attendance&Exams — Monthly Proforma, Consolidated Internal & Univ Mark Sheets",
+    subtitle: "Single PDF per class • Naming: DEPT_2026-27_ODD_1UG_Consolidate",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "Monthly Attendance Link", label: "Monthly Attendance (Jun–Nov / Dec–May)", type: "url" },
+      { key: "University Attendance Link", label: "Univ. Attendance Proforma", type: "url" },
+      { key: "Consolidated Internal Link", label: "Consolidated Internal Marks", type: "url" },
+      { key: "University Mark Sheet Link", label: "Univ. Exam Mark Sheet", type: "url" },
+      { key: "Revaluation & Arrear Remedial Link", label: "Reval / Arrear Remedial Link", type: "url" }
+    ]
+  },
+  "D_Graduate UG": {
+    domain: "DEPARTMENT", title: "D_Graduate UG — 2024–2027 Pass Out Progression, Placement & Higher Studies",
+    subtitle: "Naming: DEPT_2024-2027_UG_Placement_001 | Higher Studies_001",
+    cols: [
+      { key: "Category", label: "Record Category", type: "select", options: ["Batch Summary (2024-2027)","Placement","Higher Studies","Entrepreneur"] },
+      { key: "Reg.No", label: "Register No. (or Batch)", type: "text" },
+      { key: "Name of the Student", label: "Student Name / Cohort Note", type: "text" },
+      { key: "Company / Institution / Enterprise", label: "Company / University / Startup", type: "text" },
+      { key: "Designation / Programme / Level", label: "Role / Course / State-Nat-Intl", type: "text" },
+      { key: "Salary per annum / Appeared-Passed", label: "CTC (INR) / Pass Count", type: "text" },
+      { key: "Drive Link", label: "Offer Letter / ID / Consolidated MS Link", type: "url", namingHint: "DEPT_2024-2027_UG_Placement_001" }
+    ]
+  },
+  "D_Graduate PG": {
+    domain: "DEPARTMENT", title: "D_Graduate PG — 2025–2027 Pass Out Progression, Placement & Higher Studies",
+    subtitle: "Naming: DEPT_2025-2027_PG_Placement_001 | Higher Studies_001",
+    cols: [
+      { key: "Category", label: "Record Category", type: "select", options: ["Batch Summary (2025-2027)","Placement","Higher Studies","Entrepreneur"] },
+      { key: "Reg.No", label: "Register No. (or Batch)", type: "text" },
+      { key: "Name of the Student", label: "Student Name / Cohort Note", type: "text" },
+      { key: "Company / Institution / Enterprise", label: "Company / University / Startup", type: "text" },
+      { key: "Designation / Programme / Level", label: "Role / Course / State-Nat-Intl", type: "text" },
+      { key: "Salary per year / Appeared-Passed", label: "CTC (INR) / Pass Count", type: "text" },
+      { key: "Drive Link", label: "Offer Letter / ID / Consolidated MS Link", type: "url", namingHint: "DEPT_2025-2027_PG_Placement_001" }
+    ]
+  },
+  "F_Responsibility in VETIAS": {
+    domain: "FACULTY", title: "F_Responsibility in VETIAS — Institutional Roles (AY 2026–2027)",
+    subtitle: "No document upload required (NIL)",
+    cols: [
+      { key: "Faculty Name", label: "Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Faculty Responsibilities", label: "Responsibility", type: "select", options: ["CLUB","CELL","COMMITTEE","IQAC","ADMISSION","ASSOCIATION COORDINATOR","Class Tutor","IIC Coordinator","Website Coordinator","OTHERS"] },
+      { key: "PARTICULARS", label: "Particulars / Wing Name", type: "text" }
+    ]
+  },
+  "F_Academic Roles": {
+    domain: "FACULTY", title: "F_Academic Roles — External University & Academic Roles",
+    subtitle: "Naming: DEPT_2026-2027_Faculty Name_Roles",
+    cols: [
+      { key: "Faculty Name", label: "Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Academic Roles", label: "Role", type: "select", options: ["Senate","Syndicate","Board of Studies Member (Bharathiar University / other Universities / Colleges)","Reviewer","University Representatives","External Examiner – Practical/ Valuation","Question setting communication order","DC/VIVA - External Examiner","Convener","Session Chair","Chief Guest","Others"] },
+      { key: "Particulars", label: "University / Event Particulars", type: "text" },
+      { key: "Drive Link", label: "Invitation / Attendance Certificate Link", type: "url", namingHint: "DEPT_2026-2027_Faculty Name_Roles" }
+    ]
+  },
+  "F_Awards": {
+    domain: "FACULTY", title: "F_Awards — Faculty Awards & Recognitions",
+    subtitle: "Naming: DEPT_2026-2027_Awards_01_Faculty Name",
+    cols: [
+      { key: "Name of the Faculty", label: "Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Date of Award", label: "Date", type: "date" },
+      { key: "Name of the Award", label: "Award Title", type: "text" },
+      { key: "Awarded by (Host)", label: "Awarding Body", type: "text" },
+      { key: "Event Name / Particulars", label: "Event / Particulars", type: "text" },
+      { key: "Cash / Shield / Medal / Any other", label: "Recognition Form", type: "text" },
+      { key: "Drive Link", label: "Certificate Link", type: "url", namingHint: "DEPT_2026-2027_Awards_01_Faculty Name" }
+    ]
+  },
+  "F_Resource person": {
+    domain: "FACULTY", title: "F_Resource person — Invited Talks & Sessions Delivered",
+    subtitle: "Naming: DEPT_2026-2027_Resource Person_01_Faculty Name",
+    cols: [
+      { key: "Name of the Faculty", label: "Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Date", label: "Date", type: "date" },
+      { key: "Level", label: "Level", type: "select", options: ["International","National","State","Institution"] },
+      { key: "Mode", label: "Mode", type: "select", options: ["Offline","Online"] },
+      { key: "Type of Programme", label: "Programme Type", type: "select", options: ["Seminar","Conference","Workshop","Symposium","Webinar","Guest Lecture","FDP","PDP","Industry Event","Training Programme","Others"] },
+      { key: "Title of the Programe", label: "Talk / Session Title", type: "text" },
+      { key: "Name of the Institution / Event / Any other", label: "Host Institution", type: "text" },
+      { key: "Drive Link", label: "Invitation & Certificate PDF Link", type: "url", namingHint: "DEPT_2026-2027_Resource Person_01_Faculty Name" }
+    ]
+  },
+  "F_Participation": {
+    domain: "FACULTY", title: "F_Participation — Faculty FDP / Conference / Workshop Participation",
+    subtitle: "Naming: DEPT_2026-2027_Participation_01_Faculty Name",
+    cols: [
+      { key: "Name of the Faculty", label: "Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Mode of Participation", label: "Mode", type: "select", options: ["Offline","Online"] },
+      { key: "Level", label: "Level", type: "select", options: ["International","National","State Level","Institutional Level"] },
+      { key: "Type of Programme", label: "Programme Type", type: "select", options: ["Seminar","Conference","Workshop","Symposium","Webinar","Guest Lecture","FDP","PDP","Industry Event","Training Programme","Others"] },
+      { key: "Starting Date", label: "Start Date", type: "date" },
+      { key: "Ending Date", label: "End Date", type: "date" },
+      { key: "No. of Days", label: "Days", type: "number" },
+      { key: "Programme Title", label: "Programme Title", type: "text" },
+      { key: "Host Institution", label: "Host Institution", type: "text" },
+      { key: "Drive Link", label: "Certificate Drive Link", type: "url", namingHint: "DEPT_2026-2027_Participation_01_Faculty Name" }
+    ]
+  },
+  "F_Presentation": {
+    domain: "FACULTY", title: "F_Presentation — Research Papers Presented by Faculty",
+    subtitle: "Naming: DEPT_2026-2027_Presentation_01_Faculty Name",
+    cols: [
+      { key: "Name of the Faculty", label: "Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Mode of Presentation", label: "Mode", type: "select", options: ["Offline","Online"] },
+      { key: "Level", label: "Level", type: "select", options: ["International","National","State Level","Institutional Level"] },
+      { key: "Conference / Seminar", label: "Event Type", type: "select", options: ["Conference","Seminar"] },
+      { key: "Starting Date", label: "Start Date", type: "date" },
+      { key: "Ending Date", label: "End Date", type: "date" },
+      { key: "No. of Days", label: "Days", type: "number" },
+      { key: "Paper Presentation Title", label: "Paper Title", type: "text" },
+      { key: "Host Institution", label: "Host Institution", type: "text" },
+      { key: "Financial Support Received (INR)", label: "VETIAS Seed Support (Rs.)", type: "number" },
+      { key: "Drive Link", label: "Certificate Drive Link", type: "url", namingHint: "DEPT_2026-2027_Presentation_01_Faculty Name" }
+    ]
+  },
+  "F_Publications": {
+    domain: "FACULTY", title: "F_Publications — Faculty Research Publications (CY Jan 2026 – Dec 2026)",
+    subtitle: "Note: Calendar Year Jan 2026 – Dec 2026 • Naming: DEPT_2026-2027_Publication_01_Faculty Name",
+    cols: [
+      { key: "Name of the Faculty", label: "Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Type", label: "Publication Type", type: "select", options: ["Research Article","Conference Proceedings","Book Chapter","Book"] },
+      { key: "Author Position", label: "Author Position", type: "select", options: ["First","Second","Third","Fourth","Fifth"] },
+      { key: "Month & Year of Publication", label: "Month & Year (2026)", type: "text" },
+      { key: "Title of the Published Article", label: "Article / Book Title", type: "text" },
+      { key: "Name of the Publisher / Journal / Organization", label: "Journal / Publisher", type: "text" },
+      { key: "Indexing", label: "Indexing", type: "select", options: ["Scopus","Web of Science","UGC Care","SCI","Peer reviewed","Not Applicable"] },
+      { key: "Issue, Volume & Page Number", label: "Vol / Iss / Pages", type: "text" },
+      { key: "ISSN / ISBN Number", label: "ISSN / ISBN", type: "text" },
+      { key: "Impact factor", label: "Impact Factor", type: "text" },
+      { key: "URL link", label: "DOI / Journal URL", type: "url" },
+      { key: "Drive Link", label: "Published PDF Drive Link", type: "url", namingHint: "DEPT_2026-2027_Publication_01_Faculty Name" }
+    ]
+  },
+  "F_PatentCopyright": {
+    domain: "FACULTY", title: "F_PatentCopyright — Patents & Copyrights (CY Jan 2026 – Dec 2026)",
+    subtitle: "Naming: DEPT_2026-2027_Patent_01_Faculty Name",
+    cols: [
+      { key: "Academic Year", label: "Year", type: "select", options: ["2026-2027","2025-2026"] },
+      { key: "Name of the Applicant / Inventor", label: "Inventor / Applicant", type: "text" },
+      { key: "Particulars", label: "Type", type: "select", options: ["Patent","Copyright"] },
+      { key: "Number of Position", label: "Inventor Position", type: "select", options: ["1","2","3","4","5","6","7","8","9","10"] },
+      { key: "Date of Filing", label: "Filing Date", type: "date" },
+      { key: "Application No.", label: "Application No.", type: "text" },
+      { key: "Field of Invention", label: "Field", type: "text" },
+      { key: "Title of the Invention", label: "Title", type: "text" },
+      { key: "Publication Date", label: "Publication / Grant Date", type: "date" },
+      { key: "Patent / Publication Number", label: "Patent / Pub No.", type: "text" },
+      { key: "Drive Link", label: "Filed / Granted PDF Link", type: "url", namingHint: "DEPT_2026-2027_Patent_01_Faculty Name" }
+    ]
+  },
+  "F_Sponsored Research": {
+    domain: "FACULTY", title: "F_Sponsored Research — Funded Research Projects",
+    subtitle: "Naming: DEPT_2026-2027_Sponsored Research_01_Faculty Name",
+    cols: [
+      { key: "Name of the Faculty", label: "PI / Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Nature of Research", label: "Nature", type: "select", options: ["Project","Seminar","Conference","Workshop","FDP"] },
+      { key: "Role", label: "Role", type: "select", options: ["Investigator","Co - Investigator","Convenor","Co-Convenor"] },
+      { key: "Date of Sanctioned", label: "Sanction Date", type: "date" },
+      { key: "Title of the Project Sanctioned", label: "Project Title", type: "text" },
+      { key: "Duration", label: "Duration", type: "text" },
+      { key: "Amount Sanctioned (in Rs.)", label: "Sanctioned Grant (Rs.)", type: "number", sum: true },
+      { key: "Funding Agency", label: "Agency", type: "select", options: ["Seed Money (In-House)","UGC","ICSSR","TNSCST","Other"] },
+      { key: "Status", label: "Status", type: "select", options: ["Ongoing","Completed"] },
+      { key: "Drive Link", label: "Sanction Order Link", type: "url", namingHint: "DEPT_2026-2027_Sponsored Research_01_Faculty Name" }
+    ]
+  },
+  "F_Consultancy": {
+    domain: "FACULTY", title: "F_Consultancy — Industrial & Institutional Consultancy Projects",
+    subtitle: "Naming: DEPT_2026-2027_Consultancy_01_Faculty Name",
+    cols: [
+      { key: "Faculty Name", label: "Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Title", label: "Consultancy Title", type: "text" },
+      { key: "Client Organization", label: "Client Organization", type: "text" },
+      { key: "Year of Initiation", label: "Initiation Year", type: "text" },
+      { key: "Duration", label: "Duration", type: "text" },
+      { key: "Status", label: "Status", type: "select", options: ["Ongoing","Completed"] },
+      { key: "Consultancy Fee (INR)", label: "Revenue (INR)", type: "number", sum: true },
+      { key: "Drive Link", label: "Agreement / Receipt Link", type: "url", namingHint: "DEPT_2026-2027_Consultancy_01_Faculty Name" }
+    ]
+  },
+  "F_Online Course": {
+    domain: "FACULTY", title: "F_Online Course — Faculty MOOC / NPTEL Certifications",
+    subtitle: "Naming: DEPT_2026-2027_Online Course_01_Faculty Name",
+    cols: [
+      { key: "Name of the Faculty", label: "Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Course Name", label: "Course Name", type: "text" },
+      { key: "Course Code", label: "Course Code", type: "text" },
+      { key: "Course Provider", label: "Agency", type: "select", options: ["NPTEL","COURSE ERA","GOOGLE","IBM","ICT","OTHERS"] },
+      { key: "From Date", label: "From Date", type: "date" },
+      { key: "To Date", label: "To Date", type: "date" },
+      { key: "Duration (Days / Week)", label: "Duration", type: "text" },
+      { key: "Percentage Secured", label: "Score %", type: "number" },
+      { key: "Grade", label: "Grade / Elite", type: "text" },
+      { key: "Drive Link", label: "Certificate Link", type: "url", namingHint: "DEPT_2026-2027_Online Course_01_Faculty Name" }
+    ]
+  },
+  "F_Video Lecture": {
+    domain: "FACULTY", title: "F_Video Lecture — Faculty E-Content & YouTube Lectures",
+    subtitle: "Direct YouTube URL required",
+    cols: [
+      { key: "Academic Year", label: "Academic Year", type: "select", options: ["2026-2027","2025-2026"] },
+      { key: "Semester", label: "Semester", type: "select", options: ["I","II","III","IV","V","VI"] },
+      { key: "Faculty Name", label: "Faculty Name", type: "text" },
+      { key: "Designation", label: "Designation", type: "select", options: DESIGNATIONS },
+      { key: "Topic/Title", label: "Topic / Lecture Title", type: "text" },
+      { key: "URL links", label: "YouTube URL", type: "url" }
+    ]
+  },
+  "S_Database": {
+    domain: "STUDENT", title: "S_Database — Student Sanctioned, Admitted & Current Strength",
+    subtitle: "Naming: DEPT_2026-2027_ODD_GALLEY_CLASS NAME",
+    cols: [
+      { key: "Class", label: "Cohort", type: "select", options: ["I UG","II UG","III UG","I PG","II PG"] },
+      { key: "Batch", label: "Batch", type: "text" },
+      { key: "Sanctioned Strength", label: "Sanctioned", type: "number" },
+      { key: "Admitted Male", label: "Admitted Male", type: "number" },
+      { key: "Admitted Female", label: "Admitted Female", type: "number" },
+      { key: "Current Strength (ODD Galley)", label: "Current Strength", type: "number", sum: true },
+      { key: "SC/ST", label: "SC/ST", type: "number" },
+      { key: "BC", label: "BC", type: "number" },
+      { key: "MBC", label: "MBC", type: "number" },
+      { key: "OBC", label: "OBC", type: "number" },
+      { key: "OC", label: "OC", type: "number" },
+      { key: "First Graduates", label: "First Grad.", type: "number" },
+      { key: "Galley Drive Link", label: "ODD Galley PDF Link", type: "url", namingHint: "DEPT_2026-2027_ODD_GALLEY_CLASS NAME" }
+    ]
+  },
+  "S_Scholarship.": {
+    domain: "STUDENT", title: "S_Scholarship — Management, Government, Sports & Private Scholarships",
+    subtitle: "Naming: DEPT_2026-2027_ODD_Scholarship_REG.NO.",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Class", label: "Cohort", type: "select", options: ["I UG","II UG","III UG","I PG","II PG"] },
+      { key: "Register number", label: "Register No.", type: "text" },
+      { key: "Student Name", label: "Student Name", type: "text" },
+      { key: "Kind of Scholarship", label: "Type", type: "select", options: ["Management","Sports","Government","Private","NGO","Others"] },
+      { key: "Name of the Scheme / Organization", label: "Scheme / Agency", type: "text" },
+      { key: "Availed Scholarship (in Rupees)", label: "Amount (Rs.)", type: "number", sum: true },
+      { key: "Date of Availed", label: "Date", type: "date" },
+      { key: "Drive Link", label: "Sanction Order Link", type: "url", namingHint: "DEPT_2026-2027_ODD_Scholarship_REG.NO." }
+    ]
+  },
+  "S_Awards": {
+    domain: "STUDENT", title: "S_Awards — Student Awards & Prizes (Academic / Sports / Culturals)",
+    subtitle: "Naming: DEPT_2026-2027_ODD_AWARD_REG.NO.",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "Reg. No.", label: "Register No.", type: "text" },
+      { key: "Name of the Student", label: "Student Name", type: "text" },
+      { key: "Nature of Event", label: "Nature", type: "select", options: ["Academic Events","Sports Events","Culturals","Inter Collegiate Meet","Social Activity","Others"] },
+      { key: "Name of the Award", label: "Prize / Position", type: "select", options: ["Award","First Prize","Second Prize","Third Prize","Consolation","Winner","Runner"] },
+      { key: "Date", label: "Date", type: "date" },
+      { key: "Level", label: "Level", type: "select", options: ["International","National","State","District","Inter - College","Intra - College (Department)"] },
+      { key: "Category", label: "Category", type: "select", options: ["Individual Event","Group Event"] },
+      { key: "Amount (Cash Prize)", label: "Cash Prize (Rs.)", type: "number" },
+      { key: "Event Description", label: "Event Description", type: "text" },
+      { key: "Awarded by", label: "Host Organization", type: "text" },
+      { key: "Drive Link", label: "Certificate Link", type: "url", namingHint: "DEPT_2026-2027_ODD_AWARD_REG.NO." }
+    ]
+  },
+  "S_PartcipationPresentation": {
+    domain: "STUDENT", title: "S_ParticipationPresentation — Student Event Participation & Presentations",
+    subtitle: "Naming: DEPT_2026-2027_ODD_Participation_REG.NO.",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "Reg. No.", label: "Register No.", type: "text" },
+      { key: "Name of the Student", label: "Student Name", type: "text" },
+      { key: "Nature of Event", label: "Nature", type: "select", options: ["Academic Events","Sports Events","Culturals","Inter Collegiate Meet","Social Activity","Others"] },
+      { key: "Date of Participation / Presentation", label: "Date", type: "date" },
+      { key: "No. of Days Participated", label: "Days", type: "number" },
+      { key: "Level", label: "Level", type: "select", options: ["International","National","State","District","Inter - College","Intra - College (Department)"] },
+      { key: "Mode", label: "Role", type: "select", options: ["Participation","Presentation"] },
+      { key: "Type of Event", label: "Event Type", type: "select", options: ["Conference","Seminar","Symposium","Webinar","Workshop","Intercollegiate meet","Hackathon","Sports","Others"] },
+      { key: "Programme Title", label: "Programme / Paper Title", type: "text" },
+      { key: "Participated in", label: "Host Institution", type: "text" },
+      { key: "Drive Link", label: "Certificate Link", type: "url", namingHint: "DEPT_2026-2027_ODD_Participation_REG.NO." }
+    ]
+  },
+  "S_Publication": {
+    domain: "STUDENT", title: "S_Publication — Student Publications (Articles / Books / News)",
+    subtitle: "Naming: DEPT_2026-2027_Publication_01_REG.NO.",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "Register Number", label: "Register No.", type: "text" },
+      { key: "Name of the Student", label: "Student Name", type: "text" },
+      { key: "Type", label: "Type", type: "select", options: ["Research Article","Conference Proceedings","Book Chapter","Book","Magazine","News Paper Articles"] },
+      { key: "Author Position", label: "Author Position", type: "select", options: ["First","Second","Third","Fourth","Fifth"] },
+      { key: "Month & Year of Publication", label: "Month & Year", type: "text" },
+      { key: "Title of the Published Work", label: "Title", type: "text" },
+      { key: "Name of the Publisher / Journal", label: "Journal / Publisher", type: "text" },
+      { key: "Indexing", label: "Indexing", type: "select", options: ["Scopus","Web of Science","UGC Care","SCI","Peer reviewed","Not Applicable"] },
+      { key: "Drive Link", label: "Published PDF Link", type: "url", namingHint: "DEPT_2026-2027_Publication_01_REG.NO." }
+    ]
+  },
+  "S_MOOC ": {
+    domain: "STUDENT", title: "S_MOOC — Student Online / NPTEL Course Completions",
+    subtitle: "Naming: DEPT_2026-2027_ODD_MOOC_REGISTER NO.",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["ODD","EVEN"] },
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "Reg.No", label: "Register No.", type: "text" },
+      { key: "Name of the Student", label: "Student Name", type: "text" },
+      { key: "Course Name", label: "Course Name", type: "text" },
+      { key: "Course Code", label: "Course Code", type: "text" },
+      { key: "Course Provider", label: "Provider (NPTEL/Coursera)", type: "text" },
+      { key: "Duration (Days)", label: "Days", type: "number" },
+      { key: "Enrolled / Cleared", label: "Status", type: "select", options: ["Cleared","Enrolled"] },
+      { key: "Percentage Secured", label: "Score %", type: "number" },
+      { key: "Grade", label: "Grade", type: "text" },
+      { key: "Drive Link", label: "Certificate Link", type: "url", namingHint: "DEPT_2026-2027_ODD_MOOC_REGISTER NO." }
+    ]
+  },
+  "S_Project": {
+    domain: "STUDENT", title: "S_Project — Student Capstone & Mini Project Reports",
+    subtitle: "Naming: DEPT_2026-2027_EVEN_Project_CLASS",
+    cols: [
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "Register No.", label: "Register No.", type: "text" },
+      { key: "Name of the Student", label: "Student Name", type: "text" },
+      { key: "Project title", label: "Project Title", type: "text" },
+      { key: "Name of the Guide", label: "Guide Name", type: "text" },
+      { key: "Date of Submission", label: "Submission Date", type: "date" },
+      { key: "Drive Link", label: "Signed Front Page + Review Reports PDF", type: "url", namingHint: "DEPT_2026-2027_EVEN_Project_CLASS" }
+    ]
+  },
+  "S_IV  Field Visit": {
+    domain: "STUDENT", title: "S_IV  Field Visit — Industrial & Field Visits",
+    subtitle: "Naming: DEPT_2026-2027_ODD_IV_01",
+    cols: [
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "Date", label: "Visit Date", type: "date" },
+      { key: "No. of Days", label: "Days", type: "number" },
+      { key: "Industry Name & Place", label: "Industry Name & Location", type: "text" },
+      { key: "No. of students participated", label: "Students Count", type: "number" },
+      { key: "Name of the Faculty Accompanied", label: "Accompanying Faculty", type: "text" },
+      { key: "Drive Link", label: "IV Report Drive Link", type: "url", namingHint: "DEPT_2026-2027_ODD_IV_01" }
+    ]
+  },
+  "S_Training Programs Intenship": {
+    domain: "STUDENT", title: "S_Training Programs Internship — Student Internships & Training",
+    subtitle: "Naming: DEPT_2026-2027_ODD_TRI.PRG_01",
+    cols: [
+      { key: "Semester", label: "Semester", type: "select", options: ["I","II","III","IV","V","VI"] },
+      { key: "Class", label: "Class", type: "select", options: CLASSES },
+      { key: "No. of Students Participated", label: "Students Count", type: "number" },
+      { key: "Starting Date", label: "Start Date", type: "date" },
+      { key: "Ending Date", label: "End Date", type: "date" },
+      { key: "Duration (Days / Weeks / Months)", label: "Duration", type: "text" },
+      { key: "Name of the Training Program", label: "Program / Internship Title", type: "text" },
+      { key: "Venue", label: "Venue / Company", type: "text" },
+      { key: "Training Provider", label: "Provider Details", type: "text" },
+      { key: "Resource Person", label: "Resource Person / Mentor", type: "text" },
+      { key: "Drive Link", label: "Certificate / Report Link", type: "url", namingHint: "DEPT_2026-2027_ODD_TRI.PRG_01" }
+    ]
+  }
+};
+
+let currentDept = "Computer Science";
+let activeTab = "Summary Sheet";
+let store = {};
+
+function normalizeGasUrl(url) {
+  if (!url) return DEFAULT_GAS_WEBAPP_URL;
+  let clean = url.trim();
+  if (clean.endsWith("/dev")) clean = clean.slice(0, -4) + "/exec";
+  clean = clean.replace("https://script.google.com/a/macros/vetias.ac.in/s/", "https://script.google.com/macros/s/");
+  return clean;
+}
+
+function getGasUrl() {
+  return normalizeGasUrl(localStorage.getItem("vetias_iqac_gas_url") || DEFAULT_GAS_WEBAPP_URL);
+}
+
+function saveGasUrl() {
+  const input = document.getElementById("gasUrlInput").value;
+  const normalized = normalizeGasUrl(input);
+  localStorage.setItem("vetias_iqac_gas_url", normalized);
+  document.getElementById("gasUrlInput").value = normalized;
+  showSyncStatus("Saved production endpoint: " + normalized, "bg-emerald-50 text-emerald-700 border border-emerald-200");
+}
+
+function getDeptState(dept) {
+  if (!store[dept]) {
+    const saved = localStorage.getItem("vetias_iqac_2026_" + dept);
+    if (saved) {
+      try { store[dept] = JSON.parse(saved); } catch (e) {}
+    }
+  }
+  if (!store[dept]) {
+    const statuses = {};
+    SUMMARY_ITEMS.forEach(it => { statuses[it.tab] = { status: "Ongoing", incharge: "" }; });
+    store[dept] = {
+      meta: { wing: "", coordinator: "", hod: "", dean: "" },
+      statuses,
+      tables: {}
+    };
+    Object.keys(TAB_SCHEMAS).forEach(t => { store[dept].tables[t] = []; });
+  }
+  return store[dept];
+}
+
+function persistDeptState() {
+  const st = getDeptState(currentDept);
+  localStorage.setItem("vetias_iqac_2026_" + currentDept, JSON.stringify(st));
+  const ind = document.getElementById("saveIndicator");
+  if (ind) ind.textContent = "Saved • " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  updateProgress();
+}
+
+function initApp() {
+  const sel = document.getElementById("deptSelect");
+  sel.innerHTML = DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join("");
+  document.getElementById("gasUrlInput").value = getGasUrl();
+  switchDepartment(DEPARTMENTS[12]); // Default Computer Science
+}
+
+function switchDepartment(dept) {
+  currentDept = dept;
+  document.getElementById("deptSelect").value = dept;
+  document.getElementById("drawerDeptLabel").textContent = "Dept: " + dept;
+  const st = getDeptState(dept);
+  document.getElementById("metaWing").value = st.meta.wing || "";
+  document.getElementById("metaCoordinator").value = st.meta.coordinator || "";
+  document.getElementById("metaHod").value = st.meta.hod || "";
+  document.getElementById("metaDean").value = st.meta.dean || "";
+  renderNav();
+  renderWorkspace();
+  updateProgress();
+}
+
+function updateMeta(field, val) {
+  const st = getDeptState(currentDept);
+  st.meta[field] = val;
+  persistDeptState();
+}
+
+function selectTab(tabName) {
+  activeTab = tabName;
+  toggleMobileDrawer(false);
+  renderNav();
+  renderWorkspace();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleMobileDrawer(open) {
+  const drawer = document.getElementById("mobileDrawer");
+  const backdrop = document.getElementById("mobileDrawerBackdrop");
+  if (open) {
+    drawer.classList.remove("-translate-x-full");
+    backdrop.classList.remove("hidden");
+  } else {
+    drawer.classList.add("-translate-x-full");
+    backdrop.classList.add("hidden");
+  }
+}
+
+function updateProgress() {
+  const st = getDeptState(currentDept);
+  const completed = SUMMARY_ITEMS.filter(it => (st.statuses[it.tab]?.status || "Ongoing") === "Completed").length;
+  const pct = Math.round((completed / SUMMARY_ITEMS.length) * 100);
+  document.getElementById("sidebarProgressText").textContent = `${completed} / ${SUMMARY_ITEMS.length} (${pct}%)`;
+  document.getElementById("sidebarProgressBar").style.width = pct + "%";
+}
+
+function renderNav() {
+  const st = getDeptState(currentDept);
+  const groups = [
+    { label: "Master Control", items: [{ tab: "Summary Sheet", title: "Summary Sheet (36 Checklist)" }] },
+    { label: "NIRF Rankings", items: SUMMARY_ITEMS.filter(i => i.domain === "NIRF").map(i => ({ tab: i.tab, title: i.tab })) },
+    { label: "Department (D_)", items: SUMMARY_ITEMS.filter(i => i.domain === "DEPARTMENT").map(i => ({ tab: i.tab, title: `${i.sno}. ${i.tab}` })) },
+    { label: "Faculty (F_)", items: SUMMARY_ITEMS.filter(i => i.domain === "FACULTY").map(i => ({ tab: i.tab, title: `${i.sno}. ${i.tab}` })) },
+    { label: "Student (S_)", items: SUMMARY_ITEMS.filter(i => i.domain === "STUDENT").map(i => ({ tab: i.tab, title: `${i.sno}. ${i.tab}` })) }
+  ];
+
+  const html = groups.map(g => `
+    <div>
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 mb-1.5">${g.label}</div>
+      <div class="space-y-0.5">
+        ${g.items.map(it => {
+          const isActive = activeTab === it.tab;
+          const cnt = it.tab === "Summary Sheet" ? "" : (st.tables[it.tab]?.length || 0);
+          return `
+            <button onclick="selectTab('${it.tab}')" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-xs font-medium transition ${isActive ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-700 hover:bg-slate-100'}">
+              <span class="truncate pr-2">${it.title}</span>
+              ${cnt !== "" ? `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-blue-500 text-white' : (cnt > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500')}">${cnt}</span>` : ''}
+            </button>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  document.getElementById("desktopNavContainer").innerHTML = html;
+  document.getElementById("mobileNavContainer").innerHTML = html;
+}
+
+function renderWorkspace() {
+  const container = document.getElementById("workspaceContainer");
+  const mobileAddBtn = document.getElementById("mobileAddRowBtn");
+  if (activeTab === "Summary Sheet") {
+    if (mobileAddBtn) mobileAddBtn.classList.add("opacity-40", "pointer-events-none");
+    container.innerHTML = renderSummarySheetHTML();
+    return;
+  }
+  if (mobileAddBtn) mobileAddBtn.classList.remove("opacity-40", "pointer-events-none");
+  container.innerHTML = renderTabEditorHTML(activeTab);
+}
+
+function renderSummarySheetHTML() {
+  const st = getDeptState(currentDept);
+  return `
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-900">Master Summary Sheet — ${currentDept}</h2>
+          <p class="text-xs text-slate-500">Update completion status & faculty in-charge for all 36 IQAC particulars before submitting.</p>
+        </div>
+        <button onclick="pushToCloud()" class="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs">↑ Sync All to Master Google Sheet</button>
+      </div>
+
+      <!-- Desktop Table -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-900 text-white uppercase text-[11px]">
+              <th class="p-3">S.No</th>
+              <th class="p-3">Domain</th>
+              <th class="p-3">Particulars & File Naming Rule</th>
+              <th class="p-3 text-center">Rows</th>
+              <th class="p-3">Status</th>
+              <th class="p-3">Faculty Incharge</th>
+              <th class="p-3 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            ${SUMMARY_ITEMS.map(it => {
+              const rowSt = st.statuses[it.tab] || { status: "Ongoing", incharge: "" };
+              const count = (st.tables[it.tab] || []).length;
+              return `
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 font-bold text-slate-500">${it.sno}</td>
+                  <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">${it.domain}</span></td>
+                  <td class="p-3">
+                    <div class="font-semibold text-slate-900">${it.particulars}</div>
+                    <div class="mono text-[10px] text-blue-600 mt-0.5">${it.naming.replace("DEPT", currentDept.toUpperCase())}</div>
+                  </td>
+                  <td class="p-3 text-center font-bold ${count > 0 ? 'text-emerald-600' : 'text-slate-400'}">${count}</td>
+                  <td class="p-3">
+                    <select onchange="updateSummaryStatus('${it.tab}', 'status', this.value)" class="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold ${rowSt.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : (rowSt.status === 'Not Applicable' ? 'bg-slate-100 text-slate-600' : 'bg-amber-50 text-amber-800 border-amber-300')}">
+                      <option value="Ongoing" ${rowSt.status === 'Ongoing' ? 'selected' : ''}>Ongoing</option>
+                      <option value="Completed" ${rowSt.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                      <option value="Not Applicable" ${rowSt.status === 'Not Applicable' ? 'selected' : ''}>Not Applicable</option>
+                    </select>
+                  </td>
+                  <td class="p-3">
+                    <input type="text" value="${escapeHtml(rowSt.incharge || '')}" oninput="updateSummaryStatus('${it.tab}', 'incharge', this.value)" placeholder="Faculty Name" class="w-full rounded-lg border border-slate-300 px-2.5 py-1 text-xs" />
+                  </td>
+                  <td class="p-3 text-right">
+                    <button onclick="selectTab('${it.tab}')" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold">Open Tab →</button>
+                  </td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Stacked Cards -->
+      <div class="md:hidden divide-y divide-slate-200">
+        ${SUMMARY_ITEMS.map(it => {
+          const rowSt = st.statuses[it.tab] || { status: "Ongoing", incharge: "" };
+          const count = (st.tables[it.tab] || []).length;
+          return `
+            <div class="p-3.5 space-y-2.5">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700">#${it.sno} • ${it.domain}</span>
+                  <h3 class="text-sm font-bold text-slate-900 mt-1">${it.particulars}</h3>
+                </div>
+                <span class="px-2 py-1 rounded-full text-xs font-bold ${count > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${count} rows</span>
+              </div>
+              <div class="mono text-[10px] text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg break-all">${it.naming.replace("DEPT", currentDept.toUpperCase())}</div>
+              <div class="grid grid-cols-2 gap-2">
+                <select onchange="updateSummaryStatus('${it.tab}', 'status', this.value)" class="rounded-lg border border-slate-300 px-2.5 py-2 font-semibold bg-white">
+                  <option value="Ongoing" ${rowSt.status === 'Ongoing' ? 'selected' : ''}>Ongoing</option>
+                  <option value="Completed" ${rowSt.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                  <option value="Not Applicable" ${rowSt.status === 'Not Applicable' ? 'selected' : ''}>Not Applicable</option>
+                </select>
+                <input type="text" value="${escapeHtml(rowSt.incharge || '')}" oninput="updateSummaryStatus('${it.tab}', 'incharge', this.value)" placeholder="Faculty Incharge" class="rounded-lg border border-slate-300 px-2.5 py-2" />
+              </div>
+              <button onclick="selectTab('${it.tab}')" class="w-full py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold">Open & Enter Data →</button>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function updateSummaryStatus(tab, field, val) {
+  const st = getDeptState(currentDept);
+  if (!st.statuses[tab]) st.statuses[tab] = { status: "Ongoing", incharge: "" };
+  st.statuses[tab][field] = val;
+  persistDeptState();
+}
+
+function renderTabEditorHTML(tabName) {
+  const schema = TAB_SCHEMAS[tabName];
+  const st = getDeptState(currentDept);
+  const rows = st.tables[tabName] || [];
+  const sumCol = schema.cols.find(c => c.sum);
+  const totalSum = sumCol ? rows.reduce((acc, r) => acc + (parseFloat(r[sumCol.key]) || 0), 0) : null;
+
+  return `
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-800">${schema.domain}</span>
+            <span class="text-xs font-semibold text-slate-500">${currentDept}</span>
+          </div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-900 mt-1">${schema.title}</h2>
+          <p class="text-xs text-slate-500 mono mt-0.5">${schema.subtitle.replace("DEPT", currentDept.toUpperCase())}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          ${totalSum !== null ? `<div class="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800">Total ${sumCol.label}: ${totalSum.toLocaleString('en-IN')}</div>` : ''}
+          <button onclick="addRowForActiveTab()" class="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition">+ Add New Row</button>
+        </div>
+      </div>
+
+      ${rows.length === 0 ? `
+        <div class="p-10 text-center space-y-3">
+          <div class="text-sm font-semibold text-slate-600">No entries recorded yet for ${currentDept} in <span class="mono">${tabName}</span>.</div>
+          <button onclick="addRowForActiveTab()" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow">+ Add First Record</button>
+        </div>
+      ` : `
+        <!-- Desktop Table View -->
+        <div class="hidden lg:block overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-900 text-white text-[11px] uppercase">
+                <th class="p-2.5 w-10">#</th>
+                ${schema.cols.map(c => `<th class="p-2.5 min-w-[140px]">${c.label}</th>`).join("")}
+                <th class="p-2.5 w-14 text-center">Del</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              ${rows.map((row, idx) => `
+                <tr class="hover:bg-slate-50 align-top">
+                  <td class="p-2.5 font-bold text-slate-500">${idx + 1}</td>
+                  ${schema.cols.map(c => `<td class="p-2">${renderFieldInput(tabName, idx, c, row[c.key])}</td>`).join("")}
+                  <td class="p-2.5 text-center">
+                    <button onclick="deleteTableRow('${tabName}', ${idx})" class="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 font-bold" title="Delete row">✕</button>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile Stacked Card View -->
+        <div class="lg:hidden divide-y divide-slate-200">
+          ${rows.map((row, idx) => `
+            <div class="p-4 space-y-3 bg-white">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span class="text-xs font-extrabold text-blue-700">Record #${idx + 1}</span>
+                <button onclick="deleteTableRow('${tabName}', ${idx})" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-xs font-bold">Delete</button>
+              </div>
+              <div class="space-y-3">
+                ${schema.cols.map(c => `
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">${c.label}</label>
+                    ${renderFieldInput(tabName, idx, c, row[c.key])}
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function renderFieldInput(tabName, rowIdx, col, val) {
+  const safeVal = val !== undefined && val !== null ? String(val) : "";
+  if (col.type === "select") {
+    return `
+      <select onchange="updateCell('${tabName}', ${rowIdx}, '${col.key}', this.value)" class="w-full rounded-lg border border-slate-300 px-2.5 py-2 bg-white">
+        <option value="">-- Select --</option>
+        ${col.options.map(opt => `<option value="${escapeHtml(opt)}" ${safeVal === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join("")}
+      </select>
+    `;
+  }
+  if (col.type === "url") {
+    const hint = col.namingHint ? col.namingHint.replace("DEPT", currentDept.toUpperCase()) : "";
+    return `
+      <div class="space-y-1">
+        <input type="url" value="${escapeHtml(safeVal)}" oninput="updateCell('${tabName}', ${rowIdx}, '${col.key}', this.value)" placeholder="https://drive.google.com/..." class="w-full rounded-lg border border-slate-300 px-2.5 py-2" />
+        ${hint ? `<div class="flex items-center justify-between gap-1 text-[10px] text-slate-500 mono bg-slate-50 px-2 py-0.5 rounded">
+          <span class="truncate">${hint}</span>
+          <button type="button" onclick="navigator.clipboard.writeText('${hint}')" class="text-blue-600 font-bold shrink-0">Copy</button>
+        </div>` : ''}
+      </div>
+    `;
+  }
+  return `<input type="${col.type || 'text'}" value="${escapeHtml(safeVal)}" oninput="updateCell('${tabName}', ${rowIdx}, '${col.key}', this.value)" class="w-full rounded-lg border border-slate-300 px-2.5 py-2" />`;
+}
+
+function addRowForActiveTab() {
+  if (activeTab === "Summary Sheet") return;
+  const st = getDeptState(currentDept);
+  const schema = TAB_SCHEMAS[activeTab];
+  const newRow = { Department: currentDept };
+  schema.cols.forEach(c => { newRow[c.key] = ""; });
+  st.tables[activeTab].push(newRow);
+  persistDeptState();
+  renderNav();
+  renderWorkspace();
+}
+
+function updateCell(tabName, rowIdx, key, val) {
+  const st = getDeptState(currentDept);
+  if (st.tables[tabName] && st.tables[tabName][rowIdx]) {
+    st.tables[tabName][rowIdx][key] = val;
+    persistDeptState();
+    const schema = TAB_SCHEMAS[tabName];
+    if (schema && schema.cols.some(c => c.sum && c.key === key)) {
+      renderWorkspace();
+    }
+  }
+}
+
+function deleteTableRow(tabName, rowIdx) {
+  const st = getDeptState(currentDept);
+  st.tables[tabName].splice(rowIdx, 1);
+  persistDeptState();
+  renderNav();
+  renderWorkspace();
+}
+
+function loadSampleData() {
+  const st = getDeptState(currentDept);
+  st.meta = { wing: "", coordinator: "Dr. R. Karthikeyan", hod: "Dr. S. Meenakshi", dean: "Dr. K. Palanisamy" };
+  st.tables["NIRF Expenses (AY 2026-27)"] = [
+    { Department: currentDept, "Name of the Seminar/Conference/Workshop": "National Symposium on AI & Data Analytics 2026", Date: "2026-08-14", "No. of Participants": 185, "Expenditure incurred": 45000, "Type of Event": "National Conference/Seminar/Workshops" }
+  ];
+  st.tables["D_Activities"] = [
+    { Department: currentDept, "Approval Number": "VETIAS/IQAC/2026/014", "Faculty Coordinator": "Prof. A. Divya", Date: "2026-07-22", "Duration (No. of Days)": 1, "Nature of the Event": "Workshop", "Title of Event": "Hands-on Cloud & GitHub Workflows", Level: "Institutional Level", "Associated with Other Department / Organisation": "ICT Academy", "Resource Persons": "Mr. V. Pradeep, Architect", Venue: "Kamarajar Arangam", "No. of Participants": 140, "Social media / Website Link": "https://vetias.ac.in", "Drive Link": "https://drive.google.com/drive/folders/sample_prg_001" }
+  ];
+  st.tables["F_Publications"] = [
+    { Department: currentDept, "Name of the Faculty": "Dr. R. Karthikeyan", Designation: "Associate Professor & Head", Type: "Research Article", "Author Position": "First", "Month & Year of Publication": "September 2026", "Title of the Published Article": "Federated Learning Models for Smart Healthcare", "Name of the Publisher / Journal / Organization": "IEEE Access", Indexing: "Scopus", "Issue, Volume & Page Number": "Vol. 14, pp. 1120-1135", "ISSN / ISBN Number": "2169-3536", "Impact factor": "3.9", "URL link": "https://doi.org/10.1109/sample", "Drive Link": "https://drive.google.com/drive/folders/sample_pub_01" }
+  ];
+  st.tables["S_Database"] = [
+    { Department: currentDept, Class: "I UG", Batch: "2026-2029", "Sanctioned Strength": 60, "Admitted Male": 28, "Admitted Female": 30, "Current Strength (ODD Galley)": 58, "SC/ST": 10, BC: 26, MBC: 14, OBC: 5, OC: 3, "First Graduates": 22, "Galley Drive Link": "https://drive.google.com/drive/folders/sample_galley_1ug" },
+    { Department: currentDept, Class: "II UG", Batch: "2025-2028", "Sanctioned Strength": 60, "Admitted Male": 26, "Admitted Female": 31, "Current Strength (ODD Galley)": 56, "SC/ST": 9, BC: 25, MBC: 15, OBC: 4, OC: 3, "First Graduates": 19, "Galley Drive Link": "https://drive.google.com/drive/folders/sample_galley_2ug" }
+  ];
+  st.statuses["NIRF Expenses (AY 2026-27)"].status = "Completed";
+  st.statuses["D_Activities"].status = "Completed";
+  st.statuses["F_Publications"].status = "Completed";
+  st.statuses["S_Database"].status = "Completed";
+  persistDeptState();
+  switchDepartment(currentDept);
+}
+
+function exportDeptExcel() {
+  const st = getDeptState(currentDept);
+  const wb = XLSX.utils.book_new();
+
+  const summaryRows = SUMMARY_ITEMS.map(it => ({
+    DOMAIN: it.domain,
+    "S NO": it.sno,
+    PARTICULARS: it.tab,
+    "FILES INCLUDES": it.particulars,
+    "UPLOADED FILE NAME SHOULD BE": it.naming.replace("DEPT", currentDept.toUpperCase()),
+    STATUS: st.statuses[it.tab]?.status || "Ongoing",
+    "FACULTY INCHARGE": st.statuses[it.tab]?.incharge || "",
+    "RECORD COUNT": (st.tables[it.tab] || []).length
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Summary Sheet");
+
+  Object.keys(TAB_SCHEMAS).forEach(tabName => {
+    const rows = (st.tables[tabName] || []).map((r, idx) => ({
+      "S.No": idx + 1,
+      Department: currentDept,
+      ...r
+    }));
+    const ws = rows.length > 0 ? XLSX.utils.json_to_sheet(rows) : XLSX.utils.aoa_to_sheet([["S.No", "Department", ...TAB_SCHEMAS[tabName].cols.map(c => c.key)]]);
+    XLSX.utils.book_append_sheet(wb, ws, tabName.substring(0, 31));
+  });
+
+  XLSX.writeFile(wb, `${currentDept.toUpperCase()}_IQAC_2026-2027.xlsx`);
+}
+
+function importDeptExcel(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const wb = XLSX.read(e.target.result, { type: "array" });
+    const st = getDeptState(currentDept);
+    if (wb.Sheets["Summary Sheet"]) {
+      const sRows = XLSX.utils.sheet_to_json(wb.Sheets["Summary Sheet"]);
+      sRows.forEach(r => {
+        const tab = r.PARTICULARS || r.Particulars;
+        if (tab && st.statuses[tab]) {
+          st.statuses[tab].status = r.STATUS || r.Status || "Ongoing";
+          st.statuses[tab].incharge = r["FACULTY INCHARGE"] || r.Faculty_Incharge || "";
+        }
+      });
+    }
+    Object.keys(TAB_SCHEMAS).forEach(tabName => {
+      const sheet = wb.Sheets[tabName] || wb.Sheets[tabName.substring(0, 31)];
+      if (sheet) {
+        const parsed = XLSX.utils.sheet_to_json(sheet);
+        st.tables[tabName] = parsed.map(row => {
+          const clean = { Department: currentDept };
+          TAB_SCHEMAS[tabName].cols.forEach(c => {
+            clean[c.key] = row[c.key] !== undefined ? row[c.key] : "";
+          });
+          return clean;
+        });
+      }
+    });
+    persistDeptState();
+    renderNav();
+    renderWorkspace();
+    alert("Imported workbook into " + currentDept + " successfully.");
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function openSyncModal() {
+  document.getElementById("syncModal").classList.remove("hidden");
+  document.getElementById("syncModal").classList.add("flex");
+}
+function closeSyncModal() {
+  document.getElementById("syncModal").classList.add("hidden");
+  document.getElementById("syncModal").classList.remove("flex");
+}
+function showSyncStatus(msg, cls) {
+  const box = document.getElementById("syncStatusBox");
+  box.className = "rounded-xl p-3 text-xs font-semibold " + cls;
+  box.textContent = msg;
+  box.classList.remove("hidden");
+}
+
+async function pushToCloud() {
+  const url = getGasUrl();
+  const st = getDeptState(currentDept);
+  const payload = {
+    department: currentDept,
+    meta: st.meta,
+    summarySheet: SUMMARY_ITEMS.map(it => ({
+      sno: it.sno,
+      domain: it.domain,
+      particulars: it.tab,
+      status: st.statuses[it.tab]?.status || "Ongoing",
+      incharge: st.statuses[it.tab]?.incharge || "",
+      count: (st.tables[it.tab] || []).length
+    })),
+    tables: st.tables
+  };
+
+  openSyncModal();
+  showSyncStatus("Syncing " + currentDept + " data to Master Google Sheet...", "bg-blue-50 text-blue-700 border border-blue-200");
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.status === "ok") {
+      showSyncStatus("Success! Synced " + currentDept + " at " + new Date().toLocaleTimeString(), "bg-emerald-50 text-emerald-700 border border-emerald-200");
+    } else {
+      showSyncStatus("Sync error: " + (data.message || "Unknown response"), "bg-rose-50 text-rose-700 border border-rose-200");
+    }
+  } catch (err) {
+    showSyncStatus("Network/Permission error. Ensure Apps Script is deployed as Web App (Execute as: Me, Access: Anyone / vetias.ac.in). Details: " + err.message, "bg-rose-50 text-rose-700 border border-rose-200");
+  }
+}
+
+async function pullFromCloud() {
+  const url = getGasUrl();
+  openSyncModal();
+  showSyncStatus("Fetching saved cloud snapshot for " + currentDept + "...", "bg-blue-50 text-blue-700 border border-blue-200");
+  try {
+    const res = await fetch(url + "?dept=" + encodeURIComponent(currentDept));
+    const data = await res.json();
+    if (data.status === "ok" && data.payload) {
+      const st = getDeptState(currentDept);
+      if (data.payload.meta) st.meta = data.payload.meta;
+      if (Array.isArray(data.payload.summarySheet)) {
+        data.payload.summarySheet.forEach(item => {
+          if (st.statuses[item.particulars]) {
+            st.statuses[item.particulars] = { status: item.status || "Ongoing", incharge: item.incharge || "" };
+          }
+        });
+      }
+      if (data.payload.tables) {
+        Object.keys(TAB_SCHEMAS).forEach(t => {
+          if (Array.isArray(data.payload.tables[t])) st.tables[t] = data.payload.tables[t];
+        });
+      }
+      persistDeptState();
+      switchDepartment(currentDept);
+      showSyncStatus("Restored cloud snapshot for " + currentDept + " (Last updated: " + data.updatedAt + ")", "bg-emerald-50 text-emerald-700 border border-emerald-200");
+    } else if (data.status === "not_found") {
+      showSyncStatus("No cloud submission found yet for " + currentDept + ".", "bg-amber-50 text-amber-800 border border-amber-200");
+    } else {
+      showSyncStatus("Error: " + (data.message || "Unable to fetch"), "bg-rose-50 text-rose-700 border border-rose-200");
+    }
+  } catch (err) {
+    showSyncStatus("Fetch failed: " + err.message, "bg-rose-50 text-rose-700 border border-rose-200");
+  }
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+window.addEventListener("DOMContentLoaded", initApp);
+</script>
+</body>
+</html>
